@@ -1,10 +1,6 @@
 ### Mort Modelling###
-## Load Library'
-if(!require("pacman")) install.packages("pacman")
-p_load(sf);p_load(spdep)
-p_load(tidyverse);p_load(openxlsx);p_load(Qtools)
-p_load(rstan) p_load(bayesplot);p_load(INLA);p_load(scoringRules); 
-p_load("ggpubr");
+## Load Libraries
+library(tidyverse); library(rstan); library(bayesplot); library(ggpubr); 
 
 #### Load Data ####
 load("TotalData.RData") #load Data
