@@ -81,4 +81,4 @@ MaleData <- MaleData %>% mutate(Exposure=c(rep(NA,times=which(MaleData$Jahr.R>20
 TotalData <- rbind(FemaleData,MaleData)
 
 save(TotalData,
-     Bayern, file = file.path(getwd(),"TotalData.RData"))
+     Bayern, file = file.path(getwd(),"Data/TotalData.RData"))

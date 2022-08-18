@@ -3,7 +3,7 @@
 library(tidyverse); library(rstan); library(bayesplot); library(ggpubr); 
 
 #### Load Data ####
-load("TotalData.RData") #load Data
+load("Data/TotalData.RData") #load Data
 ### Load Functions
 source("01_Functions.R")
 

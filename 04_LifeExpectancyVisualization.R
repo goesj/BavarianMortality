@@ -5,10 +5,10 @@ library(RColorBrewer); library(cowplot); library(ggdist); library(ggridges)
 ### Load Functions
 source("01_Functions.R")
 #### Load Data ####
-load("TotalData.RData") #load Data
+load("Data/TotalData.RData") #load Data
 
 ## Load Life Expectancy Stacking Frame Results
-load("LifeExpFrameStacking.RData")
+load("Data/LifeExpFrameStacking.RData")
 
 ## Map Plot Year 17 (next to each other) ##
 InSampleData <- TestDataFun(TotalData, Sex="männlich",LastYearObs = 2017)
