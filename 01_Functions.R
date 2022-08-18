@@ -315,7 +315,13 @@ FCDataFrame <- function(FCMat,Exposure,PQuant,ObservedCount){ #Function for the 
   return(DataFrame)
 }
 
-
+#Helper function to get Model Name
+transformer <- function(x, values) {
+  if(length(unique(x)) != length(values)){
+    stop("Must be of same length")
+  }
+  return(values[match(x, unique(x))])
+}
 
 ### Life Expectancy Functions###
 #Life Expectancy FC Function##
@@ -493,6 +499,25 @@ GearyCPlot <- function(TotalData, Sex, LastYearObs){
   return(P)
 }
 
+#Function for Creation of Yrep Density 
+YRepDensity <- function(Draws, Deaths, Sex){
+  if(Sex=="weiblich"){
+    bayesplot::color_scheme_set("purple")
+  } else {
+    bayesplot::color_scheme_set("blue")
+  }
+  g1 <- bayesplot::ppc_dens_overlay(y = Deaths, yrep =Draws)+xlim(0,10)
+  g2 <- bayesplot::ppc_dens_overlay(y = Deaths, yrep =Draws)+ xlim(10, 20)
+  g3 <- bayesplot::ppc_dens_overlay(y = Deaths, yrep =Draws)+ xlim(20, 100)
+  g4 <- bayesplot::ppc_dens_overlay(y = Deaths, yrep =Draws)+ xlim(100, 300)
+  
+  return(
+    ggpubr::ggarrange(g1,g2,
+                      g3,g4,
+                      ncol=2,
+                      nrow=2)
+  )
+}
 
 ## Function for calculation of Life Expectancy Quantiles
 LifeExpSampleFunction2 <- function(FCMatIn, FCMatOut, PI, sex="weiblich",
