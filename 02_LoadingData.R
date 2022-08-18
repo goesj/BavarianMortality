@@ -80,28 +80,5 @@ MaleData <- MaleData %>% mutate(Exposure=c(rep(NA,times=which(MaleData$Jahr.R>20
 #Combine the Datasets
 TotalData <- rbind(FemaleData,MaleData)
 
-
-### LIFE EXPECTANCY Bevölkerungsvorausberechnung Landesamt Statistik###
-LE_RBVB <- read.xlsx(xlsxFile = file.path(getwd(),"Data/Lebenserwartung_regBVB_2020-2040.xlsx"),
-                      startRow = 4)
-
-#Create Helper Data for Extraction of Names
-HelpData <- FemaleData %>% filter(Jahr.R==2001, AgeGroup == "unter.1")
-
-#Add Proper Region Number and Region Name
-LE_RBVB <- LE_RBVB %>% 
-  mutate("Geschlecht"=ifelse(Geschlechtsgruppe==1, "männlich","weiblich"),
-         "Kreis.Nummer" = HelpData %>% 
-           slice(match(AGS.kurz,substr(HelpData$Kreis.Nummer,3,5))) %>%  #Match Part of Regional Number 
-           select(Kreis.Nummer) %>%  #Select Column
-           pull(),
-         "Kreise.Name" = HelpData %>% 
-           slice(match(AGS.kurz,substr(HelpData$Kreis.Nummer,3,5))) %>% 
-           select(Kreise.Name) %>% 
-           pull())
-
-
 save(TotalData,
-     Bayern,
-     OberFranken,
-     LE_RBVB, file = file.path(getwd(),"TotalData.RData"))
+     Bayern, file = file.path(getwd(),"TotalData.RData"))
