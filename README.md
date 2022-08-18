@@ -12,3 +12,7 @@ Within the `Data` folder the following can be found: Deaths and Population data 
 Also within the subfolder `Maps` are shapefiles which are needed for the creation of Maps
 
 In addition, the results of the final forecasts may be found as an RData type called *LifeExpFrameStacking.RData*. These are stacked forecasts of multiple models for both males and females (see Text for details) and is needed for the visualization of Life Expecancy predictions and Shiny App.  
+
+## R Code
+
+There are multiple R files requiring some packages. 
