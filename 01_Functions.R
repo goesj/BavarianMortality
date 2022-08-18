@@ -90,13 +90,11 @@ CohortIndex <- function(agegroup, time, maxAge, M){
 }
 
 ## Function for Creation of Test Data
-TestDataFun <- function(Data,Sex,LastYearObs,Region="Bayern", AdjMatType=2){
-  if(Region!="Bayern"){ #OberFranken
-    Data <- Data %>% filter(Kreis.Nummer %in% OberFranken$ARS & 
-                              Jahr.R > 2000)
-  } else { #Bayern
-    Data <- Data %>% filter(Jahr.R > 2000)
-  }
+## ATTENTION: TOTALDATA needs to be loaded in R first!
+TestDataFun <- function(Data,Sex,LastYearObs, AdjMatType=2){
+  
+  Data <- Data %>% filter(Jahr.R > 2000)
+  
   #Filter Year and Sex
   Data <- Data %>% filter(., Geschlecht==Sex & Jahr.R <=LastYearObs)
   
@@ -115,23 +113,14 @@ TestDataFun <- function(Data,Sex,LastYearObs,Region="Bayern", AdjMatType=2){
   
   
   #Insert Nodes for BYM2 Model and SAR Model
-  if(Region!="Bayern"){ #Oberfranken
-    nm.adjOF <- poly2nb(OberFranken)
-    AdjMatOberFranken <- as(nb2mat(nm.adjOF, style = "B"), "Matrix")
-    Nodes <-  CARData4Stan(NeighborhoodMatrix = AdjMatOberFranken) 
-    scalingFac <- ScalingFacBYM2(Nodes = Nodes, AdjMat = AdjMatOberFranken)
+  nm.adj <- poly2nb(Bayern)
+  AdjMatBayern <- as(nb2mat(nm.adj, style = "B"), "Matrix")
+  Nodes <- CARData4Stan(NeighborhoodMatrix = AdjMatBayern) 
+  scalingFac <- ScalingFacBYM2(Nodes = Nodes, AdjMat = AdjMatBayern) #scaling Factor BYM2 Model
     
-    AdjMatSAR <- AdjMatFun(AdjMat = AdjMatOberFranken, type=AdjMatType, TypeVek = OberFranken$SN_KTYP4)
+  AdjMatSAR <- AdjMatFun(AdjMat=AdjMatBayern, type=AdjMatType, TypeVek= Bayern$SN_KTYP4)
     
-  } else {
-    nm.adj <- poly2nb(Bayern)
-    AdjMatBayern <- as(nb2mat(nm.adj, style = "B"), "Matrix")
-    Nodes <- CARData4Stan(NeighborhoodMatrix = AdjMatBayern) 
-    scalingFac <- ScalingFacBYM2(Nodes = Nodes, AdjMat = AdjMatBayern)
-    
-    AdjMatSAR <- AdjMatFun(AdjMat=AdjMatBayern, type=AdjMatType, TypeVek= Bayern$SN_KTYP4)
-    
-  }
+ 
   
   return(list(Data=Data, #Data
               Nodes=Nodes, #BYM2 /ICAR
@@ -140,10 +129,10 @@ TestDataFun <- function(Data,Sex,LastYearObs,Region="Bayern", AdjMatType=2){
 }
 
 #Function for Gerneration of Data as Input for Stan Models
-StanData <- function(Data, LastYearObs=2016,Sex, Region="Bayern",AdjMatType=3, 
+StanData <- function(Data, LastYearObs=2016,Sex,AdjMatType=3, 
                      ModelType, RegionType="BYM2", Cohort=TRUE, TFor=1){
   
-  DataInput <- TestDataFun(Data=Data, Region=Region, AdjMatType=AdjMatType, LastYearObs=LastYearObs, Sex=Sex)
+  DataInput <- TestDataFun(Data=Data, AdjMatType=AdjMatType, LastYearObs=LastYearObs, Sex=Sex)
   
   #Basics
   DataOut <- list("T"=max(DataInput$Data$YearID),"A"=max(DataInput$Data$AgeID),
@@ -182,15 +171,13 @@ StanData <- function(Data, LastYearObs=2016,Sex, Region="Bayern",AdjMatType=3,
 }
 
 
-### Functions for Evaluation of Forecasts ###
-OutOfSampleData <- function(Data, Region="Bayern", Sex="weiblich", LastYearObs=2016, h=1){
+### Functions for creation of Out of Sample data (for evaluation of forecasts)
+OutOfSampleData <- function(Data, Sex="weiblich", LastYearObs=2016, h=1){
+  
   LastYearTest <- LastYearObs+h
-  if(Region!="Bayern"){
-    FCSubset <- Data %>% filter(Data$Jahr.R>LastYearObs & Data$Jahr.R<=LastYearTest & Data$Geschlecht==Sex & 
-                                  Data$Kreis.Nummer %in% OberFranken$ARS)
-  } else {
-    FCSubset <- Data %>% filter(Data$Jahr.R>LastYearObs & Data$Jahr.R<=LastYearTest & Data$Geschlecht==Sex)
-  }
+  
+  FCSubset <- Data %>% filter(Data$Jahr.R>LastYearObs & Data$Jahr.R<=LastYearTest & Data$Geschlecht==Sex)
+  
   
   FCSubset$KreisID <- match(FCSubset$Kreis.Nummer,unique(FCSubset$Kreis.Nummer))
   FCSubset$YearID <- match(FCSubset$Jahr.R , unique(FCSubset$Jahr.R))
@@ -212,25 +199,12 @@ PIlevel <- function(Percent){
               Lo=LowerBound))
 }
 
-PointMeasures <- function(ObservedCount, FCMat, Exposure){
-  YHat <- matrix(0, nrow = length(ObservedCount), ncol=nrow(FCMat)) #create empty matrix
-  MAEVek <- numeric(length(ObservedCount))
-  RMSEVek <- numeric(length(ObservedCount))
-  for (r in 1:nrow(YHat)) { #sample over all forecasted values
-    YHat[r,] <- rpois(n=nrow(FCMat), lambda = exp(FCMat[,r])*Exposure[r]) #draw deaths for each mu_i
-    MAEVek[r] <- abs(YHat[r,]-ObservedCount[r]) %>% mean() #MAE über alle Iterationen
-    RMSEVek[r] <- (YHat[r,]-ObservedCount[r])^2 %>% mean() %>% sqrt() #RMSE über alle Iterationen
-    
-  }
-  return(list("MAe"=MAEVek,
-              "RMSE"=RMSEVek))
-}
 #Calculation of LogScore
 logScore <- function(ObservedCount,FCMat, Exposure){
   logS <- numeric(length(ObservedCount)) #create empty vector
   for (i in 1:length(ObservedCount)) {
     lambdaVec <- exp(FCMat[,i])*Exposure[i] #calculate lambda of first observation (all posterior draws)
-    #alternative -dpois(y,lambda,log=TRUE) (scoring Rules)
+    #alternative -dpois(y,lambda,log=TRUE) 
     logS[i] <- -log(mean(dpois(ObservedCount[i], lambdaVec))) #get mean log score of that observation
   }
   return(logS)
@@ -244,15 +218,6 @@ DssScore <- function(ObservedCount, FCMat, Exposure){
   return(DSS)
 }
 
-DssEmp <- function(ObservedCount, FCMat, Exposure){
-  YHat <- matrix(0, nrow = length(ObservedCount), ncol=nrow(FCMat))
-  for (r in 1:nrow(YHat)) {
-    YHat[r,] <- rpois(n=nrow(FCMat), lambda = exp(FCMat[,r])*Exposure[r])
-  }
-  DSSEmp <- dss_sample(y = ObservedCount, dat= YHat)
-  return(DSSEmp)
-}
-
 #ranked probability score
 CRPSEmp <- function(ObservedCount, FCMat, Exposure){
   YHat <- matrix(0, nrow = length(ObservedCount), ncol=nrow(FCMat)) #create empty matrix
@@ -261,36 +226,6 @@ CRPSEmp <- function(ObservedCount, FCMat, Exposure){
   }
   DSSEmp <- scoringRules::crps_sample(y = ObservedCount, dat= YHat, method="edf") #Use Function of scoring rules
   return(DSSEmp)
-}
-
-#Empirical CDF
-EmpCDFFun <- function(ObservedCount, FCMat, Exposure){
-  N <- length(ObservedCount)
-  ECDF <- numeric(N)
-  for (i in 1:N) {
-    ECDF[i] <- mean(ppois(ObservedCount[i],exp(FCMat[,i])*Exposure[i]))
-  }
-  return(ECDF)
-}
-
-#ranked probability score (Czado et. al (2009)_p.1257)
-rps <- function(ObservedCount, FCMat, Exposure, kmax = 1500){
-  RPS <- numeric(length(ObservedCount))
-  for (i in 1:length(ObservedCount)) {
-    kmax <- ObservedCount[i]+100
-    #Calculate ECDF for all values of k
-    ECDFVek <- apply(matrix(0:kmax, ncol = 1),1,  
-                     function(x){
-                       mean(ppois(x,exp(FCMat[,i])*Exposure[i])) 
-                     })
-    
-    #Calulate value of ranked probability score
-    RPS[i] <-  (ECDFVek - ifelse(ObservedCount[i] <= 0:kmax,1,0))^2 %>% 
-                      sum()
-    
-  }
-  
-  return(RPS)
 }
 
 #Pit Histogram##
@@ -320,7 +255,8 @@ pit <- function(J=10, x, Px, Pxm1){
   F_u.bar <- sapply((0:J)/J,pit.one, x=x, Px=Px, Pxm1=Pxm1)
   f_j <- J*diff(F_u.bar)
   
-  erg <- list(breaks=(0:J)/J,counts=f_j, density=f_j,mids=(0:(J-1))/J+diff((0:J)/J)/2,
+  erg <- list(breaks=(0:J)/J,counts=f_j, density=f_j,
+              mids=(0:(J-1))/J+diff((0:J)/J)/2,
               xname="Probability Integral Transform",equidist=TRUE)
   class(erg) <- "histogram"
   return(erg)
@@ -331,7 +267,8 @@ pit <- function(J=10, x, Px, Pxm1){
 PIFunctionO1 <- function(FCMat,ExposureFC,prob=0.025){
   Drawvec <-  numeric(ncol(FCMat))
   for (r in 1:ncol(FCMat)) {
-    Drawvec[r] <- rpois(n=nrow(FCMat), lambda = exp(FCMat[,r])*ExposureFC[r]) %>% quantile(probs=prob)
+    Drawvec[r] <- rpois(n=nrow(FCMat), lambda = exp(FCMat[,r])*ExposureFC[r]) %>% 
+                  quantile(probs=prob)
   }
   return(Drawvec)
 }
@@ -340,65 +277,11 @@ PIFunctionO1 <- function(FCMat,ExposureFC,prob=0.025){
 PIFunctionO1_mid <- function(FCMat,ExposureFC,prob=0.025){
   Drawvec <- numeric(ncol(FCMat))
   for (r in 1:ncol(FCMat)) {
-    Drawvec[r] <- Qtools::midquantile(rpois(n=nrow(FCMat), lambda = exp(FCMat[,r])*ExposureFC[r]),probs=prob)$y #Calculation of midquantile
+    Drawvec[r] <- Qtools::midquantile(rpois(n=nrow(FCMat), 
+                                            lambda = exp(FCMat[,r])*ExposureFC[r]),
+                                            probs=prob)$y #Calculation of midquantile
   }
   return(Drawvec)
-}
-
-#Function for Creation of PI Interval (own Method)
-PIFunction02 <- function(FCMat,ExposureFC,prob=0.025){
-  QuantileVec <-  numeric(ncol(FCMat))
-  for (r in 1:ncol(FCMat)) {
-    Draws <- rpois(n=nrow(FCMat), lambda = exp(FCMat[,r])*ExposureFC[r]) #get draws
-    ECDF <- Draws %>% ecdf(.) #compute the empirical cummulative distribution function
-    QuantileVec[r] <-  Draws %>% quantile(.,prob=prob,type=1) #calculate the wanted quantile
-    #check if quantile is zero
-    if(QuantileVec[r]==0){
-      next #do nothing since quantile cannot be lower than zero 
-    } else if(ECDF(QuantileVec[r])>prob){ #check if quantile is bigger than probability ?
-        Qobs <- ECDF(QuantileVec[r]) #calculate specific value of quantile
-        
-        #check if difference
-        #knots(ECDF) # gives unique values of ECDF
-        QValLower <- knots(ECDF)[which(knots(ECDF)==QuantileVec[r])- #find the value of the Quantile
-                                   1] #go 1 position lower in knot vector (could mean going multiple values lower)
-        Qobs1 <- ECDF(QValLower) 
-        
-        #calulate parameter of binomial draw
-        ptilde <- (prob-Qobs1)/(Qobs-Qobs1)
-        omega <- rbinom(n = 1,size=1,prob = ptilde)
-        
-        QuantileVec[r] <- omega*QuantileVec[r]+(1-omega)*QValLower
-      }
-  }
-  return(QuantileVec)
-}
-#Calculation of Prediction Interval Method Anne (Insample)
-PIFunction02_InSample <- function(Draws,prob=0.1){
-  QuantileVec <-  numeric(ncol(Draws))
-  for (r in 1:ncol(Draws)) {
-    ECDF <- Draws[,r] %>% ecdf(.) #compute the empirical cumulative distribution function
-    QuantileVec[r] <-  Draws[,r] %>% quantile(.,prob=prob,type=1) #calculate the wanted quantile
-    #check if quantile is zero
-    if(QuantileVec[r]==0){
-      next #do nothing since quantile cannot be lower than zero 
-    } else if(ECDF(QuantileVec[r])>prob){ #check if quantile is bigger than probability ?
-      Qobs <- ECDF(QuantileVec[r]) #calculate specific value of quantile
-      
-      #check if difference
-      #knots(ECDF) # gives unique values of ECDF
-      QValLower <- knots(ECDF)[which(knots(ECDF)==QuantileVec[r])- #find the value of the Quantile
-                                 1] #go 1 position lower in knot vector (could mean going multiple values lower)
-      Qobs1 <- ECDF(QValLower) 
-      
-      #calulate parameter of binomial draw
-      ptilde <- (prob-Qobs1)/(Qobs-Qobs1)
-      omega <- rbinom(n = 1,size=1,prob = ptilde)
-      
-      QuantileVec[r] <- omega*QuantileVec[r]+(1-omega)*QValLower
-    }
-  }
-  return(QuantileVec)
 }
 
 #Coverage 
@@ -421,7 +304,7 @@ FCDataFrame <- function(FCMat,Exposure,PQuant,ObservedCount){ #Function for the 
   DataFrame <- data.frame("MeanVal"=(apply(FCMat,2, function(x) mean (exp(x)))*Exposure),
                           "logScore"=logScore(ObservedCount,FCMat,Exposure),
                           "DSS"=DssScore(ObservedCount, FCMat, Exposure),
-                          "CRPSEmp"=CRPSEmp(ObservedCount,FCMat, Exposure),
+                          "RPSEmp"=CRPSEmp(ObservedCount,FCMat, Exposure),
                           "PIL"=PIFunction02(FCMat, ExposureFC = Exposure, prob=PQuant$Lo),
                           "PIL_mid"=PIFunctionO1_mid(FCMat, ExposureFC = Exposure, prob=PQuant$Lo),
                           "PIU"=PIFunction02(FCMat, ExposureFC = Exposure, prob=PQuant$Up),
@@ -434,54 +317,6 @@ FCDataFrame <- function(FCMat,Exposure,PQuant,ObservedCount){ #Function for the 
 
 ### Life Expectancy Functions###
 #Life Expectancy FC Function##
-LifeExpFunPI <- function(FCMat,PILevel, LastYear=2017, Year=Jahr, sex="weiblich", OutOfSample=TRUE,hMax=15){
-  LifeExpFrame <- data.frame("RegNumber"=unique(InSampleData$Data$Kreis.Nummer))
-  rownames(LifeExpFrame) <- unique(InSampleData$Data$Kreise.Name)
-  
-  sexEnglish <- ifelse(sex=="weiblich","female","male") #translate sex 
-  
-  if(OutOfSample==TRUE){
-    IndexHelper <- expand.grid("Age"=unique(InSampleData$Data$AgeID), #number of age effects
-                               "Region"=unique(InSampleData$Data$Kreise.Name), #number region effect
-                               "Year"=(LastYear+1):(LastYear+hMax)) #year effects
-    
-  } else { #InSample Fit
-    IndexHelper <- expand.grid("Age"=unique(InSampleData$Data$AgeID), #number of age effects
-                               "Region"=unique(InSampleData$Data$Kreise.Name), #number region effect
-                               "Year"=unique(InSampleData$Data$Jahr.R))
-    
-  }
-  
-  for (i in 1:nrow(LifeExpFrame)) { #for all regions
-    #1. Find Position in Matrix
-    SubSetPosition <- which(IndexHelper$Year==Year & 
-                              IndexHelper$Region==rownames(LifeExpFrame)[i])
-    
-    #Mean and Quantile Bestimmen Rate
-    QuantileMat <- apply(FCMat[,SubSetPosition], 2 , function(x) c(mean(exp(x)),
-                                                                   quantile(exp(x),
-                                                                            prob=c(PILevel$Lo,PILevel$Up))))
-    
-    LifeExpFrame$Mean[i] <- #Mean life expectancy 
-      MortCast::life.table(QuantileMat[1,], #mean Value
-                           sex = sexEnglish, abridged = TRUE, open.age = 100)[1,"ex"] #Lifetable 
-    
-    LifeExpFrame$PIUp[i] <- #Upper Quantile life expectancy 
-      MortCast::life.table(QuantileMat[2, 
-      ],
-      sex = sexEnglish, abridged = TRUE, open.age = 100)[1,"ex"] #Lifetable 
-    
-    LifeExpFrame$PILo[i] <- #Lower Quantile life expectancy 
-      MortCast::life.table(QuantileMat[3, 
-      ],
-      sex = sexEnglish, abridged = TRUE, open.age = 100)[1,"ex"] #Lifetable 
-    
-  } 
-  return(LifeExpFrame)
-  
-}
-
-### with mcmc intervals ##
 LifeExpFunIt <- function(FCMat, LastYear=2017, Year=Jahr, sex="weiblich", OutOfSample=TRUE,hMax=15){
   
   LifeExpMat <- matrix(0, nrow = 1000, #iterations
@@ -507,8 +342,9 @@ LifeExpFunIt <- function(FCMat, LastYear=2017, Year=Jahr, sex="weiblich", OutOfS
   
     
     LifeExpMat[,i] <- 
-      apply(FCMat[,SubSetPosition],1, FUN = function(x) 
-                                   MortCast::life.table(x,sexEnglish, abridged = TRUE, open.age = 100)[1,"ex"])
+      apply(FCMat[,SubSetPosition],1, 
+            FUN = function(x) 
+            MortCast::life.table(x,sexEnglish, abridged = TRUE, open.age = 100)[1,"ex"]) 
     
     
 
@@ -517,35 +353,8 @@ LifeExpFunIt <- function(FCMat, LastYear=2017, Year=Jahr, sex="weiblich", OutOfS
   
 }
 
-LifeExpFunIt2 <- function(FCMat, LastYear=2017, Year=Jahr, sex="weiblich", OutOfSample=TRUE,hMax=15){
-  if(OutOfSample==TRUE){
-    IndexHelper <- expand.grid("Age"=unique(InSampleData$Data$AgeID), #number of age effects
-                               "Region"=unique(InSampleData$Data$Kreise.Name), #number region effect
-                               "Year"=(LastYear+1):(LastYear+hMax)) #year effects
-  FCMat <- exp(FCMat) #exponate Out Of Sample List
-  } else {
-    IndexHelper <- expand.grid("Age"=unique(InSampleData$Data$AgeID), #number of age effects
-                               "Region"=unique(InSampleData$Data$Kreise.Name), #number region effect
-                               "Year"=unique(InSampleData$Data$Jahr.R))
-  }
-  
-  sexEnglish <- ifelse(sex=="weiblich","female","male") #translate sex
-  RegNames <- unique(InSampleData$Data$Kreise.Name)
-  LifeExpList <- 
-    lapply(RegNames, function(u){ #get subsets via lapply
-      FCMat[1:1000,which(IndexHelper$Year==Year & IndexHelper$Region==u)]}) %>% 
-    future.apply::future_lapply(X=., function(y){ #apply function to each list using future apply
-      apply(y,1, function(z){ #calculate Life Table for each iteration
-        MortCast::life.table(z, sex = "male", abridged = TRUE, open.age = 100)[1,"ex"]
-      })
-    })
-  names(LifeExpList) <- unique(InSampleData$Data$Kreise.Name)
-  return(LifeExpList)
-
-}
-
 #Calculation of Stacking Weights##
-#Taken from Barigou Stan MoMo
+#Taken from Barigou StanMoMo Package (https://github.com/kabarigou/StanMoMo/)
 log_sum_exp <- function(u) {
   max_u <- max(u);
   a <- 0;
@@ -564,20 +373,21 @@ LoglikeMat <- function(ObservedCount, FCMat, Exposure){
   }
   return(loglikeMat)
 }
+
 #Calulation of Stacking Weights
 StackingWeights <- function(ObservedCount, FCMatList, Exposure){
   LoglikeList <- lapply(FCMatList, function(x) {LoglikeMat(ObservedCount = ObservedCount,
                                                               FCMat = x, 
                                                               Exposure = Exposure)})
-  #Log sum exp more stable?
-  #Calculation of Mean of Log Like Values (See https://mc-stan.org/docs/2_29/stan-users-guide/log-sum-of-exponentials.html 17.4.3)
+  #Calculation of Mean of Log Like Values 
+  #(See https://mc-stan.org/docs/2_29/stan-users-guide/log-sum-of-exponentials.html 17.4.3)
   lpd <- lapply(LoglikeList,function(x){apply(x,2,log_sum_exp)-log(nrow(x))}) #Calculation of Mean
   lpd_point <- simplify2array(lpd) #Mean lpd Point values mean(log(p(y|y,theta)))
   Stacking <- StackFun(lpd_point = lpd_point)
   return(Stacking)
 }
 
-#Function from loo package. Changes so that results gives Names of Models
+#Function from loo package. Changed so that results gives Names of Models
 StackFun <- function (lpd_point, optim_method = "BFGS", optim_control = list()) {
   stopifnot(is.matrix(lpd_point))
   N <- nrow(lpd_point)
@@ -614,11 +424,12 @@ StackFun <- function (lpd_point, optim_method = "BFGS", optim_control = list()) 
                    control = optim_control)$par
 
   wts <- structure(c(w, 1 - sum(w)), 
-                   names = colnames(lpd_point), 
+                   names = colnames(lpd_point),  #add model names
                    class = c("stacking_weights"))
   return(wts)
 }
 
+#Function for creation of Stacking Matrix
 StackingMat <- function(Weights, FCMatList){
   SMat <- Weights[1]*FCMatList[[1]] #copy Matrix
   for (i in 2:length(Weights)) {
@@ -628,15 +439,13 @@ StackingMat <- function(Weights, FCMatList){
   return(SMat)
 }
 
-
 #Function for Plotting Geary C
-#Function For the Creation of GeryC Plot
 GearyCPlot <- function(TotalData, Sex, LastYearObs){
   #Get InSample Data
-  InSampleData <- TestDataFun(TotalData, Sex=Sex, LastYearObs=LastYearObs,Region="Bayern", AdjMatType = 1)
+  InSampleData <- TestDataFun(TotalData, Sex=Sex, LastYearObs=LastYearObs, AdjMatType = 1)
   
   InSampleData$Data <- InSampleData$Data %>% 
-    mutate("NormD" = (Deaths/Exposure)*1000)
+    mutate("NormD" = (Deaths/Exposure)*1000) #Calculate normalized Deaths
   
   #Get Neighborhood Structure
   nm.adj <- spdep::poly2nb(Bayern) #Neighborhood List Bayern
@@ -652,7 +461,9 @@ GearyCPlot <- function(TotalData, Sex, LastYearObs){
       
       Ind <- which(InSampleData$Data$Jahr.R == t & 
                      InSampleData$Data$AgeID == a)
-      Res <- spdep::geary.test(InSampleData$Data$NormD[Ind], listw = ListBY) #do geary test and check for spatial association
+      
+      #do geary test and check for spatial association
+      Res <- spdep::geary.test(InSampleData$Data$NormD[Ind], listw = ListBY) 
       ResDat$Val[i] <- Res$estimate[1]
       ResDat$Sd[i] <- Res$estimate[3]
       ResDat$pVal[i] <- Res$p.value
@@ -681,7 +492,7 @@ GearyCPlot <- function(TotalData, Sex, LastYearObs){
 }
 
 
-
+## Function for calculation of Life Expectancy Quantiles
 LifeExpSampleFunction2 <- function(FCMatIn, FCMatOut, PI, sex="weiblich",
                                    YearsIn, YearsOut){
   
@@ -779,52 +590,3 @@ LifeExpSampleFunction2 <- function(FCMatIn, FCMatOut, PI, sex="weiblich",
   
 }
 
-# LifeExpSampleFunction <- function(FCMatIn, FCMatOut, PI, sex="weiblich"){
-#   PQuant1 <- PIlevel(PI[1])
-#   InSampleList1 <- future.apply::future_lapply(2001:2017, function(x) 
-#     LifeExpFunPI(FCMat = FCMatIn,PILevel = PQuant1,LastYear=2017, Year=x, 
-#                  sex="weiblich", OutOfSample = FALSE,hMax=15)) 
-#   
-#   OutOfSampleList1 <- future.apply::future_lapply(2018:2032, function(x) 
-#     LifeExpFunPI(FCMat = FCMatOut,PILevel = PQuant1,LastYear=2017, Year=x, 
-#                  sex="weiblich", OutOfSample = TRUE,hMax=15)) 
-#   
-#   #hard coded for length of 2
-#   PQuant2 <- PIlevel(PI[2])
-#   InSampleList2 <- future.apply::future_lapply(2001:2017, function(x) 
-#     LifeExpFunPI(FCMat = FCMatIn,PILevel = PQuant2,LastYear=2017, Year=x, 
-#                  sex="weiblich", OutOfSample = FALSE,hMax=15)) 
-#   
-#   OutOfSampleList2 <- future.apply::future_lapply(2018:2032, function(x) 
-#     LifeExpFunPI(FCMat = FCMatOut,PILevel = PQuant2,LastYear=2017, Year=x, 
-#                  sex="weiblich", OutOfSample = TRUE,hMax=15)) 
-#   
-#   #Append Last Insample Year to Out of Sample Year
-#   OutOfSampleList1 <- append(list(InSampleList1[[length(InSampleList1)]]),
-#                              OutOfSampleList1)
-#   
-#   OutOfSampleList2 <- append(list(InSampleList2[[length(InSampleList2)]]),
-#                              OutOfSampleList2)
-#   browser()
-#   
-#   #add all to singe Data Frame 
-#   Out <- 
-#     rbind( #InSample
-#       rbind(do.call("rbind", InSampleList1),
-#             do.call("rbind", InSampleList2)) %>% 
-#         mutate("width"=c(rep(PI[1]/100, 96*17), #width for geom_lineribbon
-#                          rep(PI[2]/100, 96*17)),
-#                "Type"="InSample"), #add Type
-#       #Out of Sample
-#       rbind(do.call("rbind", OutOfSampleList1),
-#             do.call("rbind", OutOfSampleList2)) %>% 
-#         mutate("width"=c(rep(PI[1]/100, 96*16), #width for geom_lineribbon
-#                          rep(PI[2]/100, 96*16)), #16 years
-#                "Type"= "OutOfSample") #add Tyoe
-#     ) %>% 
-#     mutate("Year"=c(rep(rep(2001:2017,each=96), length(PI)),
-#                     rep(rep(2017:2032,each=96), length(PI))),
-#            "Sex"=sex)
-#   return(Out)
-#   
-# }
