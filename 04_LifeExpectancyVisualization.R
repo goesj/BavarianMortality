@@ -1,69 +1,14 @@
 ##Load Libraries
 library(ggplot2); library(sf); 
-library(RColorBrewer); library(cowplot); library(ggdist)
+library(RColorBrewer); library(cowplot); library(ggdist); library(ggridges)
 
 ### Load Functions
 source("01_Functions.R")
 #### Load Data ####
 load("TotalData.RData") #load Data
 
-
-### ALL DATA FEMALE ###
-load("../Results/StackingMatF.RData")
-
-### ALL DATA Male ### (Example of Creation of Stacking Data)
-load("../ResultsStanSimulation/StanRH_BYM2_M_AllDataV2.RData")   #RH_BYM2
-load("../ResultsStanSimulation/StanAPC_BYM2_M_AllDataV2.RData")   #APC_BYM2
-load("../ResultsStanSimulation/StanAPC_BYM2_M_LTE_AllD.RData") #APC_BYM2_LTE
-
-StanFit_APC_LTE_BYM2_AllD_M <- rstan::extract(StanAPC_BYM2_M_LTE_AllD, permuted=TRUE, pars=c("mufor","MHat2"))
-StanFit_APC_BYM2_AllD_M <- rstan::extract(StanAPC_BYM2_M_AllData, permuted=TRUE, pars=c("mufor","MHat2"))
-StanFit_RH_BYM2_AllD_M <- rstan::extract(StanRH_BYM2_M_AllData, permuted=TRUE, pars=c("mufor","MHat2"))
-
-rm(StanAPC_BYM2_M_LTE_AllD,
-   StanAPC_BYM2_M_AllData)
-
-
-load("../Results/StackingWeightsM_1517.RData")
-
-
-Stacking_M_In <- list(StanFit_APC_BYM2_AllD_M$MHat[1:1000,],
-                      StanFit_RH_BYM2_AllD_M$MHat[1:1000,],
-                      StanFit_APC_LTE_BYM2_AllD_M$MHat[1:1000,]) %>% StackingMat(SWeightsFinal_M, FCMatList = .)
-
-Stacking_M_Out <- list(StanFit_APC_BYM2_AllD_M$mufor[1:1000,],
-                       StanFit_RH_BYM2_AllD_M$mufor[1:1000,],
-                       StanFit_APC_LTE_BYM2_AllD_M$mufor[1:1000,]) %>% StackingMat(SWeightsFinal_M, FCMatList = .)
-save(Stacking_M_In, 
-     Stacking_M_Out, file="../Results/StackingMatM_LTE.RData")
-
-load("../Results/StackingMatM_LTE.RData")
-
-
-##Function for Creation of Life Expectancy as Long Data Frame 
-##ATTENTION takes a long time (20Min) each
-InSampleData <- TestDataFun(TotalData, Sex="weiblich", LastYearObs = 2017)
-set.seed(1324)
-LifeExpFrameFemaleStacking <- 
-  LifeExpSampleFunction2(FCMatIn = Stacking_F_In[sample(1:1000,size = 500,replace = FALSE),], #otherwise too big!
-                         FCMatOut = Stacking_F_Out[sample(1:1000,size = 500,replace = FALSE),], #otherwise too big!
-                         PI=c(80,50), sex="weiblich", 
-                         YearsIn = 2001:2017,
-                         YearsOut = 2018:2030)
-
-InSampleData <- TestDataFun(TotalData, Sex="männlich", LastYearObs = 2017)
-LifeExpFrameMaleStacking <- 
-  LifeExpSampleFunction2(FCMatIn = Stacking_M_In[sample(1:1000,size = 500,replace = FALSE),], 
-                         FCMatOut = Stacking_M_Out[sample(1:1000,size = 500,replace = FALSE),], 
-                         PI=c(80,50), sex="männlich", 
-                         YearsIn = 2001:2017,
-                         YearsOut = 2018:2030)
-
-save(LifeExpFrameFemaleStacking,
-     LifeExpFrameMaleStacking, 
-     file="../Results/LifeExpFrameStacking.RData")
-
-load("../Results/LifeExpFrameStacking.RData")
+## Load Life Expectancy Stacking Frame Results
+load("LifeExpFrameStacking.RData")
 
 ## Map Plot Year 17 (next to each other) ##
 InSampleData <- TestDataFun(TotalData, Sex="männlich",LastYearObs = 2017)
@@ -106,7 +51,7 @@ BayernData <- data.frame("Mean"=Bayern$LifeExpStack_Female,
                          "Group"=1)
 
 g2F <- ggplot(BayernData, aes(x = Mean, y = Group, fill = stat(x))) +
-  geom_density_ridges_gradient(scale = 3, rel_min_height = 0.001) +
+  ggridges::geom_density_ridges_gradient(scale = 3, rel_min_height = 0.001) +
   scale_fill_gradientn(colours = Mypal)+
   theme_void()+
   theme(legend.position = "bottom",
@@ -166,8 +111,8 @@ gMale <- ggdraw() +
 
 
 x11()
-plot_grid(gFemale, gMale)
-dev.off()
+plot_grid(gFemale, gMale) #save/look at in 16 to 9 for proper format
+
 
 
 
@@ -229,47 +174,11 @@ gMDiffNoLeg <- gMDiff + theme(legend.position = "none")
 
 
 x11()
-pdf(file=file.path(getwd(),"Bilder/LifeExpDiff.pdf"))
 ggdraw() +
   draw_plot(gFDiff, x = 0.01, y = 0.1, width = 0.45, height = 0.95)+
   draw_plot(gMDiffNoLeg, x = 0.39, y = .1, width=0.45, height=0.95)+
   draw_plot(gLeg, x = 0.68, y = 0.1, width = 0.45, height = 0.95)
-dev.off()
 
-
-## QUANTILES FOR 2017 LIFE EXPECTANCY ###
-LogMat <- log(Stacking_F_In)
-LifeExpQuantilesPlot <- function(FCMat, sex="weiblich", Year=2017, OutOfSample=TRUE){
-  if(OutOfSample!=TRUE){
-    FCMat <- log(FCMat) #transform FC Mat into log rates
-  } 
-  if(sex=="weiblich"){
-    color_scheme_set("purple") #purple for females
-  } else{
-    color_scheme_set("blue") #blue for males
-  }
-  LifeTableMatIt <- LifeExpFunIt(FCMat = FCMat, LastYear=2017, 
-                                 Year=Year, sex=sex, 
-                                 OutOfSample=OutOfSample, hMax=15)
-  
-  Plot <- mcmc_intervals(x=LifeTableMatIt[,order(apply(LifeTableMatIt,2,mean),decreasing = TRUE)], 
-                         prob_outer = 0.8,
-                         point_est = "mean",
-                         point_size = 2.0, 
-                         inner_size = 1.0)+
-    theme(axis.text = element_text(size = 6.3),
-          panel.grid = element_line(colour = "grey92"))
-  return(Plot)
-}
-
-LifeExpQuantilesPlot(FCMat = Stacking_F_In, sex="weiblich", Year=2017,
-                     OutOfSample = FALSE)
-
-InSampleData <- TestDataFun(TotalData, Sex="männlich", LastYearObs = 2017)
-
-
-LifeExpQuantilesPlot(FCMat = Stacking_M_In, sex="männlich", Year=2017,
-                     OutOfSample = FALSE)
 
 
 ######## PLOT LE Estrimate of Region#######
@@ -299,7 +208,7 @@ x11()
         axis.text = element_text(size = 13), #change size of axis text
         axis.title = element_text(size=13), #change size of axis title
         panel.grid = element_line(colour = "grey92"))
-dev.off()
+
 
 
 
