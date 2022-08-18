@@ -49,7 +49,7 @@ StanAPC_BYM2_F <- rstan::stan(file.path(getwd(),"StanCode/APC_BYM2.stan"),
 StanFit_APC_BYM2 <- rstan::extract(StanAPC_BYM2_F, permuted=TRUE, pars=c("mufor","lambdahat","MHat"))
 
 ##### POSTERIOR PREDICTIVE CHECKS ######
-#1) density Plot of posterior predictive distribution
+#1.) density Plot of posterior predictive distribution
 InSampleData <- TestDataFun(TotalData, Sex="weiblich", LastYearObs=2016, AdjMatType = 1)
 InSampObs <-nrow(InSampleData$Data)
 
@@ -66,7 +66,7 @@ YRepDensity(Draws = DrawsAPC_BYM2[1:100,], #taking only the first 100 is a lot f
           Sex="weiblich")
 
 
-## Proportion of zeros #####
+#2.) Proportion of zeros #####
 prop_zero <- function(x) mean(x == 0)
 prop_zero(InSampleData$Data$Deaths) # check proportion of zeros in y
 
@@ -98,22 +98,25 @@ abline(h=1, lty=2)
 set.seed(420)
 PQuant <- PIlevel(80) #80% Quantil for coverage
 
+#Get Out of Sample Data
 DataOOS <- OutOfSampleData(Data = TotalData, Region="Bayern",Sex="weiblich", LastYearObs = 2014, h=2)
 
+#Create list with Models to be evaluated
 ModelList <- list(APC_BYM2 = FCMatStanAPC_BYM2)
 
+#Create a data Frame in Long Format for Model Evaluation 
 TotFCDatFrame <- ModelList %>% 
   lapply(., function(x) FCDataFrame(x, Exposure = DataOOS$ExposureFC,ObservedCount = DataOOS$D, PQuant=PQuant)) %>% 
   bind_rows(., .id="ModelID") %>%
   mutate(ModelName = transformer(ModelID,names(ModelList)))
 
 # Add Information for Out of Sample Evaluation
-TotFCDatFrame <- TotFCDatFrame %>% mutate("Region"=rep(DataOOS$FCSubset$Kreise.Name,length(unique(ModelName))),
-                                          "RegionNum"=rep(DataOOS$FCSubset$Kreis.Nummer,length(unique(ModelName))),
+TotFCDatFrame <- TotFCDatFrame %>% mutate("Region"=rep(DataOOS$FCSubset$Kreise.Name,length(unique(ModelName))), #Region Name
+                                          "RegionNum"=rep(DataOOS$FCSubset$Kreis.Nummer,length(unique(ModelName))), #Region Number
                                           "Age"=rep(DataOOS$FCSubse$AgeID,length(unique(ModelName))),#Age
                                           "RegID"=rep(DataOOS$FCSubset$KreisID,length(unique(ModelName))),#KreisID,
-                                          "D"=rep(DataOOS$FCSubset$Deaths,length(unique(ModelName))),
-                                          "Jahr"=rep(DataOOS$FCSubset$Jahr.R, length(unique(ModelName)))) #Deaths
+                                          "D"=rep(DataOOS$FCSubset$Deaths,length(unique(ModelName))), #Deaths
+                                          "Jahr"=rep(DataOOS$FCSubset$Jahr.R, length(unique(ModelName)))) #Year
 
 #Model Evaluation
 TotFCDatFrame %>% group_by(ModelName) %>%
