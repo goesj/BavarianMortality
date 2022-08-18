@@ -1,4 +1,4 @@
-// APC Model as described in Riebler,Held(2017) & Smith, Wakefield (2016) & Kuang et. al (2008)
+// APC_BYM2_LTE
 data{
   int <lower=1> T; //Time Index
   int <lower=1> A; // Age Index
@@ -40,9 +40,8 @@ parameters{
   
   vector[A] beta_age; //  Age Coefficients
   
-  //vector[C] gamma_cohort;// Cohort Coefficients
-  vector[(C-1)] gamma_cohort_raw;// Cohort Coefficients
-  
+  vector[C] gamma_cohort;// Cohort Coefficients
+
   //Variance Parameters
   real<lower=0> sigma_time;    // Standard deviation of Time
   real<lower=0> sigma_age;     // Standard deviation of Age
@@ -65,13 +64,9 @@ transformed parameters {
   
   vector[R] convolved_re; // Total BYM2 Effect
   vector[R] phi_region; // Total regional effect
-  vector[C] gamma_cohort; 
   
   vector[T] kappa_time ;
   for (t in 1:T) kappa_time[t] = drift*t + sigma_time*time_raw[t];
-  
-  gamma_cohort[1] = 0;
-  gamma_cohort[2:C] = gamma_cohort_raw; 
   
   // variance of each component should be approximately equal to 1
   convolved_re =  sqrt(1 - rho) * v + sqrt(rho / scaling_factor) * u; // see Riebler et. al (2017)
@@ -114,17 +109,8 @@ model {
   
   // Cohort Effect
   target+=normal_lpdf(gamma_cohort|0,sigma_cohort); //IID normal prior
-  // target += normal_lpdf(gamma_cohort[1]|0,sigma_cohort); // First Effects seperate prior (see e.g. Fosse(2018))
-  // target += normal_lpdf(gamma_cohort[2]|0,sigma_cohort);
-  // //RW(2) Prior
-  // target+= normal_lpdf(gamma_cohort[3:C]| 2*gamma_cohort[2:(C-1)]-gamma_cohort[1:(C-2)], sigma_cohort);
-  // 
-  // sum(gamma_cohort) ~ normal(0,0.001*C); // Soft sum to zero constraint
-  // 
   
-  //target += normal_lpdf(gamma_cohort_raw[1:2]|0,sigma_cohort); // First Effects seperate prior (see e.g. Fosse(2018))
-  //RW(2) Prior
-  //target+= normal_lpdf(gamma_cohort_raw[3:(C-1)]| 2*gamma_cohort_raw[2:(C-2)]-gamma_cohort_raw[1:(C-3)], sigma_cohort);
+  sum(gamma_cohort) ~ normal(0,0.001*C); // Soft sum to zero constraint
   
   //Region Effect (ICAR Model)
   target += -0.5 * dot_self(u[node1] - u[node2]);
@@ -138,13 +124,11 @@ model {
   
 } generated quantities { // posterior
   
-  //vector[N] log_like_y; // create Vector to store log likelihood (for waic (see Vethari, Gabry (2019)))
-  
   vector[N] lambdahat = exp(log_E + InterceptVek + //Log plus Intercept
                          kappa_time[TInd]+beta_age[AInd]+phi_region[RInd]+ gamma_cohort[CInd]+ //mu
                          eps_new*sigma_eps); // Error Term (new random draws)
   
-  vector[N] MHat2 = exp(InterceptVek + //Log plus Intercept
+  vector[N] MHat = exp(InterceptVek + //Log plus Intercept
                          kappa_time[TInd]+beta_age[AInd]+phi_region[RInd]+ gamma_cohort[CInd]+ //mu
                          eps*sigma_eps); // InSample Fit of estimated Mortality Rates (for Life Expectancy)
   
@@ -165,15 +149,11 @@ model {
     for (t in 2:TFor) kappa_time_pred[t] = drift*(T+t)+sigma_time * normal_rng(0,1);
  }
  
- // FC of New Cohort Index
- //for( k in 1:TFor) gamma_cohort_final[C+k]= 2*gamma_cohort_final[(C-1)+k]-gamma_cohort_final[(C-2)+k]+sigma_cohort*normal_rng(0,1);
-
  // // Forcast for Cohort Index
    for(t in 1:TFor){
     gamma_cohort_pred[t] = sigma_cohort*normal_rng(0,1);
   }
- //  // Append Forecasted Cohort Index on Existing Index
-  
+ //  
   
   // Forecast Log Mortality Rates (attention may be slow due to if statement in loop)
   for (t in 1:TFor) for (r in 1:R) for (a in 1:A)  {

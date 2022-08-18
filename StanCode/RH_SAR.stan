@@ -1,4 +1,5 @@
-## RH Model with SAR###
+// RH_SAR MODEL 
+// Functions taken from brms packages of Bürkner et. al
 functions{
   real normal_lagsar_lpdf(vector y, vector mu, real sigma, 
                           real rho, data matrix W, data vector eigenW) { 
@@ -83,7 +84,6 @@ parameters{
   vector[C] gamma_cohort = var_cohort * sigma_cohort; // Non centered version
 }
 model {
-   // Muss ganz am Anfang stehen (Stan only supports variable definitions at top of the block)
   vector[N] mu; // Vector of random effects
   int pos = 1;
   for(t in 1:T) for(r in 1:R) for (a in 1:A){
@@ -107,7 +107,7 @@ model {
   target += normal_lpdf(Xi|0,1);
   
   //TIME Effect
-  // Random Walk with Drift Prior (see https://github.com/kabarigou/StanMoMo/blob/50ff0a4e5b2288d308c0b8f57cff5b21e72ddca6/inst/stan/leecarter.stan)
+  // Random Walk with Drift Prior
   target += normal_lpdf(kappa_time[1]|drift,sigma_time);
   target += normal_lpdf(kappa_time[2:T]|drift+kappa_time[1:(T- 1)],sigma_time);    // Random walk with drift prior
   
@@ -135,7 +135,6 @@ model {
 } generated quantities {
   
   // Quantities for InSample Fit
-  vector[N] log_like_y; 
   vector[N] lambdahat; // Vector of random effects
   int pos = 1;
   
@@ -153,25 +152,13 @@ model {
                         beta_age2[a]*gamma_cohort[k[pos]]+
                         phi[r]+
                         log_E[pos]+normal_rng(0,1)*sigma_eps);
-                        
-    log_like_y[pos] = poisson_lpmf(y[pos]|exp(alpha_age[a]+beta_age1[a]*kappa_time[t]+
-                                              beta_age2[a]*gamma_cohort[k[pos]]+
-                                              phi[r]+eps[pos]*sigma_eps+
-                                              log_E[pos]));
     pos += 1; //pos = pos + 1 
    }
   
   kappa_time_pred[1] = drift+kappa_time[T]+sigma_time * normal_rng(0,1);
-  //gamma_cohort_pred[1] = 2*gamma_cohort[C-1]-gamma_cohort[C-2]+sigma_cohort*normal_rng(0,1);
   
   // Check if Forecast Period is greater than 1
   if(TFor > 1){
-  //   // RW(2) FC Cohort Index
-  //   gamma_cohort_pred[2] = 2*gamma_cohort_pred[1]-gamma_cohort[C-1]+sigma_cohort*normal_rng(0,1);
-  //   for(t in 3:TFor){
-  //     gamma_cohort_pred[t]= 2*gamma_cohort_pred[t-1]-gamma_cohort_pred[t-2]+sigma_cohort*normal_rng(0,1);
-  //   }
-  //   
   //   //RW (1) - Drift Cohort Index
    for (t in 2:TFor) kappa_time_pred[t] = drift+kappa_time_pred[t - 1] + sigma_time * normal_rng(0,1);
    }

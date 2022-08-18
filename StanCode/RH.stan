@@ -1,4 +1,4 @@
-## RH Model with Overdispersion
+// RH Model with Overdispersion
 data{
   int <lower=1> T; //Time Index
   int <lower=1> A; // Age Index
@@ -55,7 +55,6 @@ parameters{
 } 
 
 model {
-   // Muss ganz am Anfang stehen (Stan only supports variable definitions at top of the block)
   vector[N] mu; // Vector of random effects
   int pos = 1;
   for(t in 1:T) for(r in 1:R) for (a in 1:A){
@@ -101,9 +100,7 @@ model {
   
 } generated quantities {
   
-  vector[N] log_like_y; 
   vector[N] lambdahat;
-  //vector[N] mu; // Vector of random effects
   int pos = 1;
   
   // Quantites for Forecast
@@ -120,9 +117,6 @@ model {
                         beta_age2[a]*gamma_cohort[k[pos]]+
                         log_E[pos]+normal_rng(0,1)*sigma_eps);
                 
-    log_like_y[pos] = poisson_lpmf(y[pos]|exp(alpha_age[a]+beta_age1[a]*kappa_time[t]+
-                                              beta_age2[a]*gamma_cohort[k[pos]]+
-                                              log_E[pos]+eps[pos]*sigma_eps));
     pos += 1; //pos = pos + 1 
    }
   

@@ -1,4 +1,5 @@
-// APC Model as described in Riebler,Held(2017) & Smith, Wakefield (2016) & Kuang et. al (2008)
+// APC SAR Model
+// Functions taken from brms Package (Bürkner et. al (2022))
 functions{
   real normal_lagsar_lpdf(vector y, vector mu, real sigma, 
                           real rho, data matrix W, data vector eigenW) { 
@@ -131,8 +132,6 @@ model {
   vector[N] lambdahat  = exp(log_E + InterceptVek + //Log plus Intercept
                          kappa_time[TInd]+beta_age[AInd]+phi_region[RInd]+ gamma_cohort[CInd]+ //mu
                          eps_new*sigma_eps); // Error Term
-                         
-  vector [N] log_like_y; //= poisson_lpmf(y|lambda); // create Vector to store log likelihood (for waic (see Vethari, Gabry (2019)))
   
   vector[TFor] kappa_time_pred;
   vector[TFor] gamma_cohort_pred;
@@ -146,17 +145,9 @@ model {
   
   kappa_time_pred[1] = drift+kappa_time[T]+sigma_time * normal_rng(0,1);
   
-  // FC of New Cohort Index
-  //gamma_cohort_pred[1] = 2*gamma_cohort[C-1]-gamma_cohort[C-2]+sigma_cohort*normal_rng(0,1);
-  
+ 
   // Check if Number of Years to Forecast is greater than 1
    if(TFor > 1){
-  //   // RW(2) FC Cohort Index
-  //   gamma_cohort_pred[2] = 2*gamma_cohort_pred[1]-gamma_cohort[C-1]+sigma_cohort*normal_rng(0,1);
-  //   for(k in 3:TFor){
-  //     gamma_cohort_pred[k]= 2*gamma_cohort_pred[k-1]-gamma_cohort_pred[k-2]+sigma_cohort*normal_rng(0,1);
-  //   }
-  //   //RW (1) - Drift Cohort Index
     for (t in 2:TFor) kappa_time_pred[t] = drift+kappa_time_pred[t - 1] + sigma_time * normal_rng(0,1);
  }
   for(t in 1:TFor){
@@ -177,14 +168,6 @@ model {
                     gamma_cohort_final[K]+
                     sigma_eps*normal_rng(0,1);
     pos_f += 1;
-  }
-   // Log Likelihood
-  for (t in 1:T) for (r in 1:R) for (a in 1:A){
-    log_like_y[pos_L1] = poisson_log_lpmf(y[pos_L1]| log_E[pos_L1] + Intercept +
-                                                 kappa_time[t]+beta_age[a]+phi_region[r]+
-                                                 gamma_cohort[CInd[pos_L1]]+
-                                                 eps[pos_L1]*sigma_eps);
-    pos_L1 += 1;
   }
 
 }

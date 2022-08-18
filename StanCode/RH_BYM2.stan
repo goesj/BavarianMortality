@@ -1,4 +1,4 @@
-//RH Model with BYM2### with RW(2) Age Prior, normal dirichlet for beta
+//RH_BYM2 Model
 data{
   int <lower=1> T; //Time Index
   int <lower=1> A; // Age Index
@@ -100,7 +100,6 @@ model {
   target += beta_lpdf(rho|0.5,0.5);
   
   //TIME Effect
-  // Random Walk with Drift Prior (see https://github.com/kabarigou/StanMoMo/blob/50ff0a4e5b2288d308c0b8f57cff5b21e72ddca6/inst/stan/leecarter.stan)
   target += normal_lpdf(kappa_time[1]|drift,sigma_time);
   target += normal_lpdf(kappa_time[2:T]|drift+kappa_time[1:(T- 1)],sigma_time);    // Random walk with drift prior
   
@@ -114,10 +113,7 @@ model {
   target += dirichlet_lpdf(beta_age1|rep_vector(1, A));// Prior on beta_x
   target += dirichlet_lpdf(beta_age2|rep_vector(1, A));// Prior on beta_x
   
-  //Cohort Effect (following Riebler,Held (2017)_RW(2))
-  //target += normal_lpdf(gamma_cohort[1:2]|0,sigma_cohort);
-  //target += normal_lpdf(gamma_cohort[3:C]|2*gamma_cohort[2:(C-1)]-gamma_cohort[1:(C-2)],sigma_cohort); //RW2 Prior
-  
+  // Cohort Effect
   target += normal_lpdf(gamma_cohort|0,sigma_cohort);
   
   sum(gamma_cohort)~ normal(0,0.001*C); // Soft sum to zero constraint
@@ -137,7 +133,7 @@ model {
   
   // Quantities for InSample Fit
   vector[N] lambdahat;
-  vector[N] MHat2; // Vector of random effects
+  vector[N] MHat; // Vector of random effects
   int pos = 1;
   
   // Quantites for Forecast
@@ -158,7 +154,7 @@ model {
                         log_E[pos]+normal_rng(0,1)*sigma_eps);
                         
                         
-    MHat2[pos] = exp(alpha_age[a]+beta_age1[a]*kappa_time[t]+
+    MHat[pos] = exp(alpha_age[a]+beta_age1[a]*kappa_time[t]+
                        beta_age2[a]*gamma_cohort[k[pos]]+
                         phi_region[r]+
                         eps[pos]*sigma_eps);
@@ -174,7 +170,6 @@ model {
    for (t in 2:TFor) kappa_time_pred[t] = drift+kappa_time_pred[t - 1] + sigma_time * normal_rng(0,1);
    }
    // FC of New Cohort Index
- //for( t in 1:TFor) gamma_cohort_final[C+t]= 2*gamma_cohort_final[(C-1)+t]-gamma_cohort_final[(C-2)+t]+sigma_cohort*normal_rng(0,1);
  for(t in 1:TFor){
      gamma_cohort_pred[t] = sigma_cohort*normal_rng(0,1);
    }

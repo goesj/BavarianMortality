@@ -1,4 +1,4 @@
-## RW with Intercept for Pois Distributed Variable###
+//AP_BYM2 Model
 data{
   int <lower=1> T; //Time Index
   int <lower=1> A; // Age Index
@@ -88,10 +88,10 @@ model {
   target += normal_lpdf(kappa_time[1]|drift,sigma_time);
   target += normal_lpdf(kappa_time[2:T]|drift+kappa_time[1:(T- 1)],sigma_time);    // Random walk with drift prior
   
-  sum(kappa_time) ~ normal(0,0.001*T); //soft sum to zero constraint  // Random walk with drift prior
+  sum(kappa_time) ~ normal(0,0.001*T); //soft sum to zero constraint
   
   //Age Effect
-  target += normal_lpdf(beta_age[1]|0,sigma_age); // First Effects seperate prior (see e.g. Fosse(2018))
+  target += normal_lpdf(beta_age[1]|0,sigma_age); // First Effects seperate prior
   target += normal_lpdf(beta_age[2]|0,sigma_age);
   //RW(2) Prior
   target+= normal_lpdf(beta_age[3:A]| 2*beta_age[2:(A-1)]-beta_age[1:(A-2)], sigma_age);
@@ -109,10 +109,8 @@ model {
   target += poisson_log_lpmf(y|log_E + InterceptVek + mu + eps*sigma_eps);
 
   
-} generated quantities { // posterior
-  
-  vector[N] log_like_y; // create Vector to store log likelihood (for waic (see Vethari, Gabry (2019)))
-  
+} generated quantities { 
+  //for posterior predictive checks
   vector[N] lambdahat = exp(log_E + InterceptVek + //Log plus Intercept
                          kappa_time[TInd]+beta_age[AInd]+phi_region[RInd]+ //mu
                          eps_new*sigma_eps); // Error Term
@@ -137,12 +135,5 @@ model {
                     sigma_eps*normal_rng(0,1);
     pos_f += 1;
   }
-   // Log Likelihood
-  for (t in 1:T) for (r in 1:R) for (a in 1:A){
-    log_like_y[pos_L1] = poisson_log_lpmf(y[pos_L1]| log_E[pos_L1] + Intercept + 
-                                                 kappa_time[t]+beta_age[a]+phi_region[r]+
-                                                 eps[pos_L1]*sigma_eps);
-    pos_L1 += 1;
-  }
-  
+
 }

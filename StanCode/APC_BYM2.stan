@@ -1,4 +1,4 @@
-// APC Model as described in Riebler,Held(2017) & Smith, Wakefield (2016) & Kuang et. al (2008)
+// APC_BYM2 Model
 data{
   int <lower=1> T; //Time Index
   int <lower=1> A; // Age Index
@@ -100,7 +100,7 @@ model {
   sum(kappa_time) ~ normal(0,0.001*T); //soft sum to zero constraint
   
   //Age Effect
-  target += normal_lpdf(alpha_age[1]|0,sigma_age); // First Effects seperate prior (see e.g. Fosse(2018))
+  target += normal_lpdf(alpha_age[1]|0,sigma_age); // First Effects seperate prior 
   target += normal_lpdf(alpha_age[2]|0,sigma_age);
   //RW(2) Prior
   target+= normal_lpdf(alpha_age[3:A]| 2*alpha_age[2:(A-1)]-alpha_age[1:(A-2)], sigma_age);
@@ -122,15 +122,15 @@ model {
 
   target += poisson_log_lpmf(y|log_E + InterceptVek + mu + eps*sigma_eps);
   
-} generated quantities { // posterior
+} generated quantities { 
   
-  //vector[N] log_like_y; // create Vector to store log likelihood (for waic (see Vethari, Gabry (2019)))
-  
+  // posterior predictive checks
   vector[N] lambdahat = exp(log_E + InterceptVek + //Log plus Intercept
                          kappa_time[TInd]+alpha_age[AInd]+phi_region[RInd]+ gamma_cohort[CInd]+ //mu
                          eps_new*sigma_eps); // Error Term (new random draws)
   
-  vector[N] MHat2 = exp(InterceptVek + //Log plus Intercept
+  // Insample Rates
+  vector[N] MHat = exp(InterceptVek + //Log plus Intercept
                          kappa_time[TInd]+alpha_age[AInd]+phi_region[RInd]+ gamma_cohort[CInd]+ //mu
                          eps*sigma_eps); // InSample Fit of estimated Mortality Rates (for Life Expectancy)
   
@@ -170,13 +170,5 @@ model {
                     sigma_eps*normal_rng(0,1);
     pos_f += 1;
   }
-   // Log Likelihood
-  // for (t in 1:T) for (r in 1:R) for (a in 1:A){
-  //   log_like_y[pos_L1] = poisson_log_lpmf(y[pos_L1]| log_E[pos_L1] + Intercept + 
-  //                                                kappa_time[t]+alpha_age[a]+phi_region[r]+
-  //                                                gamma_cohort[CInd[pos_L1]]+
-  //                                                eps[pos_L1]*sigma_eps);
-  //   pos_L1 += 1;
-  // }
   
 }

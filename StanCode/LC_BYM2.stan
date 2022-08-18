@@ -1,4 +1,4 @@
-## RW with Intercept for Pois Distributed Variable###
+// LC_BYM2 Model
 data{
   int <lower=1> T; //Time Index
   int <lower=1> A; // Age Index
@@ -25,7 +25,7 @@ data{
 }
 parameters{
 
-  vector[A] alpha_age; // Age Specific Isntercept
+  vector[A] alpha_age; // Age Specific Intercept
   simplex[A] beta_age1; //Interaction Term (sums to 1 and stricly positive)
   
   vector[T] kappa_time; //  for sum to zero constraint
@@ -55,7 +55,6 @@ transformed parameters {
 
 } 
 model {
-   // Muss ganz am Anfang stehen (Stan only supports variable definitions at top of the block)
   vector[N] mu; // Vector of random effects
   int pos = 1;
   for(t in 1:T) for(r in 1:R) for (a in 1:A){
@@ -78,7 +77,7 @@ model {
   target += beta_lpdf(rho|0.5,0.5);
   
   //TIME Effect
-  // Random Walk with Drift Prior (see https://github.com/kabarigou/StanMoMo/blob/50ff0a4e5b2288d308c0b8f57cff5b21e72ddca6/inst/stan/leecarter.stan)
+  // Random Walk with Drift Prior 
   target += normal_lpdf(kappa_time[1]|drift,sigma_time);
   target += normal_lpdf(kappa_time[2:T]|drift+kappa_time[1:(T- 1)],sigma_time);    // Random walk with drift prior
   
@@ -103,7 +102,6 @@ model {
 } generated quantities {
   
   // Quantities for InSample Fit
-  vector[N] log_like_y; 
   vector[N] lambdahat; // Vector of random effects
   int pos = 1;
   
@@ -117,8 +115,6 @@ model {
     lambdahat[pos]=exp(alpha_age[a]+beta_age1[a]*kappa_time[t]+
                         phi_region[r]+
                         log_E[pos]+normal_rng(0,1)*sigma_eps);
-    log_like_y[pos] = poisson_lpmf(y[pos]|lambdahat[pos]);
-    
     pos += 1; //pos = pos + 1 
    }
    
