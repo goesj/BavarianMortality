@@ -1,0 +1,10 @@
+﻿
+Stichtag der zugrunde liegenden VG-Geometrie: 31.12.2017
+
+Stichtag der Arbeitsagenturbezirke: 31.12.2016
+Stichtag der Arbeitsmarktregionen:  31.12.2015
+Stichtag der Siedlungsstrukturelle Kreistypen - 4 Stufen: 31.12.2015
+Stichtag der Reisegebiete: 31.01.2017
+Stichtag der Raumordnungsregionen: 01.11.2016
+Stichtag der Siedlungsstrukturelle Regionstypen – 3 Stufen: 31.12.2015
+Stichtag des Städtischer und Ländlicher Raum: 31.12.2015
