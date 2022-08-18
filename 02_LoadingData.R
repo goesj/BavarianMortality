@@ -2,72 +2,51 @@
 library(sf);library(openxlsx); library(tidyverse)
 
 ### Regional Data####
-DeutschlandKreise <- read_sf(file.path(getwd(),"Data/Maps/vg250_01-01.tm32.shape.ebenen/vg250_ebenen_0101/VG250_KRS.shp"),as_tibble = FALSE)
+GermanyData <- read_sf(file.path(getwd(),"Data/Maps/vg250_01-01.tm32.shape.ebenen/vg250_ebenen_0101/VG250_KRS.shp"),as_tibble = FALSE)
 
-#Kreistypen (Wie wirtschaftlich usw. stark ist der Kreis)
-Kreistypen <- read.xlsx(file.path(getwd(),"Data/Maps/ge1000.tm32.shape/ge1000/ktyp4_1000/KTYP4_1000_Tabelle.xlsx"),
+#Regionaltype 
+RegionalType <- read.xlsx(file.path(getwd(),"Data/Maps/ge1000.tm32.shape/ge1000/ktyp4_1000/KTYP4_1000_Tabelle.xlsx"),
                         sheet = 1,colNames = TRUE)
 
-BY <- which(DeutschlandKreise$SN_L=="09") #Only Bavarias Region
-Bayern <- DeutschlandKreise[BY,] #Dataset with only Bavaria
+BY <- which(GermanyData$SN_L=="09") #Only Bavarias Region
+Bayern <- GermanyData[BY,] #Dataset with only Bavaria
 
-#Load Krankenhaus Information
-HospitalNo <- read.xlsx(file.path(getwd(),"Data/BY_FachabteilungenKrankenhäuserLandkreise.xlsx"),
-                        sheet = 2,colNames = TRUE)
-#Hänge Kreistypen an Bayern Datensatz an
-Bayern$SN_KTYP4 <- Kreistypen[match(Bayern$ARS, Kreistypen$RS),"SN_KTYP4"]
-Bayern$KTYP4 <- Kreistypen[match(Bayern$ARS, Kreistypen$RS),"KTYP4"]
+#Add RegionalType to German Data
+Bayern$SN_KTYP4 <- RegionalType[match(Bayern$ARS, RegionalType$RS),"SN_KTYP4"]
+Bayern$KTYP4 <- RegionalType[match(Bayern$ARS, RegionalType$RS),"KTYP4"]
 
-#Richtung ändern, sodass 4 das stärkste und 1 das niedriste
+#Change direction( 4 highest 1 lowest)
 Bayern$SN_KTYP4 <- ifelse(Bayern$SN_KTYP4==1,4,
                                ifelse(Bayern$SN_KTYP4==2,3,
                                       ifelse(Bayern$SN_KTYP4==3,2,1)))
 
-#Hänge Krankenhaus an
-Bayern$Hospital <- HospitalNo$Summe.Fachabteilungen
-
-
-#Erstellung von NachbarMatrix. Leider nur so möglich
-OF <- which(DeutschlandKreise$SN_L=="09" & DeutschlandKreise$SN_R=="4") #Position Oberfranken
-OberFranken <- DeutschlandKreise[OF,] #Indizierung
-
-OberFranken$SN_KTYP4 <- Kreistypen[match(OberFranken$ARS, Kreistypen$RS),"SN_KTYP4"]
-OberFranken$KTYP4 <- Kreistypen[match(OberFranken$ARS, Kreistypen$RS),"KTYP4"]
-
-OberFranken$SN_KTYP4 <- ifelse(OberFranken$SN_KTYP4==1,4,
-                                    ifelse(OberFranken$SN_KTYP4==2,3,
-                                           ifelse(OberFranken$SN_KTYP4==3,2,1)))
-
-OberFranken$Hospital<- HospitalNo[match(OberFranken$ARS, HospitalNo$Kreis.Nummer),"Summe.Fachabteilungen"]
-
-
 ## Population Data
-BevölkerungM <- read.xlsx(xlsxFile = file.path(getwd(),"Data/BY_12411(Bevölkerung)_Geschlecht_Altersgrup2000-17.xlsx"),
+PopulationM <- read.xlsx(xlsxFile = file.path(getwd(),"Data/BY_12411(Population)_2000-17.xlsx"),
                           sheet = "BevölkerungMännlich", colNames = TRUE)
 
-BevölkerungW <- read.xlsx(xlsxFile = file.path(getwd(),"Data/BY_12411(Bevölkerung)_Geschlecht_Altersgrup2000-17.xlsx"),
+PopulationW <- read.xlsx(xlsxFile = file.path(getwd(),"Data/BY_12411(Population)_2000-17.xlsx"),
                           sheet = "BevölkerungWeiblich", colNames = TRUE)
 
 
-DeathM <- read.xlsx(xlsxFile = file.path(getwd(),"Data/BY_12613(Sterbefälle)_Geschlecht_Nationalität_Altersgrup2000-17.xlsx"),
+DeathM <- read.xlsx(xlsxFile = file.path(getwd(),"Data/BY_12613(Deaths)_2000-17.xlsx"),
                     sheet = "SterbefälleMännlich", colNames = TRUE)
 
-DeathW <- read.xlsx(xlsxFile = file.path(getwd(),"Data/BY_12613(Sterbefälle)_Geschlecht_Nationalität_Altersgrup2000-17.xlsx"),
+DeathW <- read.xlsx(xlsxFile = file.path(getwd(),"Data/BY_12613(Deaths)_2000-17.xlsx"),
                     sheet = "SterbefälleWeiblich", colNames = TRUE)
 
-AgeGroups <- length(colnames(BevölkerungM[-c(1:5)])) #AgeGroups
-NamesAge <- colnames(BevölkerungM[-c(1:5)]) #Names
-RowsData <- nrow(BevölkerungM) 
+AgeGroups <- length(colnames(PopulationM[-c(1:5)])) #AgeGroups
+NamesAge <- colnames(PopulationM[-c(1:5)]) #Names
+RowsData <- nrow(PopulationM) 
 
 #Transform Data Into Long Format
-PM <- BevölkerungM %>% pivot_longer(., cols = -(1:5),names_to = "AgeGroup", values_to="Population")
+PM <- PopulationM %>% pivot_longer(., cols = -(1:5),names_to = "AgeGroup", values_to="Population")
 DM <- DeathM %>% pivot_longer(., cols = -(1:5),names_to = "AgeGroup", values_to="Death")
 
 MaleData <- PM %>% mutate("Deaths"=pull(DM[,ncol(DM)])) #add last column to data.frame (Vector of Deaths)
 
 
 #Same for Female Data
-PF <- BevölkerungW %>% pivot_longer(., cols = -(1:5),names_to = "AgeGroup", values_to="Population")
+PF <- PopulationW %>% pivot_longer(., cols = -(1:5),names_to = "AgeGroup", values_to="Population")
 DF <- DeathW %>% pivot_longer(., cols = -(1:5),names_to = "AgeGroup", values_to="Death")
 
 FemaleData <- PF %>% mutate("Deaths"=pull(DF[,ncol(DF)]))
