@@ -20,7 +20,7 @@ ggpubr::ggarrange(GearyCPlot(TotalData = TotalData,
 # For other model change Parameter in Function accordingly
 DataAPC_BYM2_Stan <- StanData(Data=TotalData, 
                               LastYearObs = 2016, #last Year of InSample Data 
-                              AdjMatType = 3,
+                              AdjMatType = 3, #3 being binary indicators for SAR model (1 & 2 currently not in use)
                               Sex="weiblich", #Sex (weiblich = female, männlich = male)
                               ModelType = "APC", #APC or RH
                               RegionType = "BYM2", #BYM2 or SAR
@@ -46,7 +46,7 @@ StanFit_APC_BYM2 <- rstan::extract(StanAPC_BYM2_F, permuted=TRUE, pars=c("mufor"
 
 ##### POSTERIOR PREDICTIVE CHECKS ######
 #1.) density Plot of posterior predictive distribution
-InSampleData <- TestDataFun(TotalData, Sex="weiblich", LastYearObs=2016, AdjMatType = 1)
+InSampleData <- TestDataFun(TotalData, Sex="weiblich", LastYearObs=2016, AdjMatType = 3)
 InSampObs <-nrow(InSampleData$Data)
 
 #create 1000 replicas for each observation
@@ -95,7 +95,7 @@ set.seed(420)
 PQuant <- PIlevel(80) #80% Quantil for coverage
 
 #Get Out of Sample Data
-DataOOS <- OutOfSampleData(Data = TotalData, Region="Bayern",Sex="weiblich", LastYearObs = 2014, h=2)
+DataOOS <- OutOfSampleData(Data = TotalData, Region="Bayern",Sex="weiblich", LastYearObs = 2016, h=1)
 
 #Create list with Models to be evaluated
 ModelList <- list(APC_BYM2 = FCMatStanAPC_BYM2)
@@ -184,3 +184,7 @@ SWeights1516 <- StackingWeights(ObservedCount = DataOOS$D,
                           Exposure = DataOOS$ExposureFC)
 
 #For Calculation of Matrix use StackingMat function with the according weights
+#here In-Sample Matrix
+InSampleStackingMat <- list(rstan::extract(StanAPC_BYM2_M_1516, permuted=TRUE, pars="MHat")$Mhat,
+                            rstan::extract(StanRH_BYM2_M_1516, permuted=TRUE, pars="MHat")$Mhat) %>% 
+                        StackingMat(Weights = SWeights1516, FCMatList = .)
