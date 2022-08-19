@@ -21,7 +21,7 @@ There are multiple R files each requiring different packages to run.
 * `03_MortModelling.R` Examplary fitting and Evaluation of a Model for Females
 * `04_LifeExpectancyVisualization.R` Script for all Visulaizationsplots found in the PDF. 
 
-The parameteric Model Code requires the following packages: 
+The parameteric model code requires the following packages: 
 `rstan`, `tidyverse`, `sf`, `INLA`
 
 The analysis part needs the following packages (in addition to the above ones)
@@ -29,3 +29,6 @@ The analysis part needs the following packages (in addition to the above ones)
 
 The visualizations part needs 
 `RColorBrewer`, `cowplot`, `ggdist`, `ggridges`; `ggpubr`
+
+## Shiny App
+A shiny app for better visualization of all results can be found in the `ShinyApp` folder. For it to run it needs access to the data in the `Data` folder.
