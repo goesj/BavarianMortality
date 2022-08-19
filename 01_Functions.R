@@ -230,6 +230,16 @@ CRPSEmp <- function(ObservedCount, FCMat, Exposure){
   return(DSSEmp)
 }
 
+#Empirical CDF
+EmpCDFFun <- function(ObservedCount, FCMat, Exposure){
+  N <- length(ObservedCount)
+  ECDF <- numeric(N)
+  for (i in 1:N) {
+    ECDF[i] <- mean(ppois(ObservedCount[i],exp(FCMat[,i])*Exposure[i]))
+  }
+  return(ECDF)
+}
+
 #Pit Histogram##
 ## Taken from Riebler INLA Group
 # https://groups.google.com/g/r-inla-discussion-group/c/eSwZJ5Iegcc
