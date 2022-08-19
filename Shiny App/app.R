@@ -1,5 +1,5 @@
 library(shiny); library(RColorBrewer); library(cowplot); library(ggridges); 
-library(ggpubr); library(ggplot2); library(tidyverse)
+library(ggpubr); library(ggplot2); library(tidyverse); library(ggdist)
 
 ## First load the data and functions needed
 source("../01_Functions.R")
