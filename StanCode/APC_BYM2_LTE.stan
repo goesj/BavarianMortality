@@ -141,19 +141,12 @@ model {
   int pos_L1 =1; 
   int <lower=0> K; // Kohort Index for Loop
   
-  kappa_time_pred[1] = drift*(T+1)+sigma_time * normal_rng(0,1);
-  
-  // Check if Number of Years to Forecast is greater than 1
-    if(TFor > 1){
- //     //RW (1) - Drift Cohort Index
-    for (t in 2:TFor) kappa_time_pred[t] = drift*(T+t)+sigma_time * normal_rng(0,1);
- }
- 
- // // Forcast for Cohort Index
-   for(t in 1:TFor){
+  // FC Time Variant Parameters
+  for (t in 1:TFor) {
+    kappa_time_pred[t] = drift*(T+t)+sigma_time * normal_rng(0,1);
     gamma_cohort_pred[t] = sigma_cohort*normal_rng(0,1);
   }
- //  
+
   
   // Forecast Log Mortality Rates (attention may be slow due to if statement in loop)
   for (t in 1:TFor) for (r in 1:R) for (a in 1:A)  {
