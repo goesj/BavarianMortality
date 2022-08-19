@@ -85,7 +85,7 @@ FY1 <- EmpCDFFun(ObservedCount = (DataOOS$D-1), FCMat=FCMatStanAPC_BYM2, Exposur
 
 
 par(cex.axis=1.2, cex.lab=1.5, cex.main=1.5, cex.sub=1)
-plot(pit(J=20,x=DataOOS$D, Px=FY,Pxm1=FY1),ylab="Relative frequency", ylim=c(0,2.5),main="LC No Overdispersion")
+plot(pit(J=20,x=DataOOS$D, Px=FY,Pxm1=FY1),ylab="Relative frequency", ylim=c(0,2.5),main="APC_BYM2 Model")
 abline(h=1, lty=2)
 
 
