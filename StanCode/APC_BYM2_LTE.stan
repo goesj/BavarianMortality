@@ -134,7 +134,7 @@ model {
   
   vector[TFor] gamma_cohort_pred;
   vector[TFor] kappa_time_pred;
-  vector[C+TFor] gamma_cohort_final = append_row(gamma_cohort, gamma_cohort_pred);
+  vector[C+TFor] gamma_cohort_final;
   
   vector[L] mufor; // predicted death rates
   int pos_f = 1;
@@ -146,7 +146,8 @@ model {
     kappa_time_pred[t] = drift*(T+t)+sigma_time * normal_rng(0,1);
     gamma_cohort_pred[t] = sigma_cohort*normal_rng(0,1);
   }
-
+  
+  gamma_cohort_final = append_row(gamma_cohort, gamma_cohort_pred);
   
   // Forecast Log Mortality Rates (attention may be slow due to if statement in loop)
   for (t in 1:TFor) for (r in 1:R) for (a in 1:A)  {
