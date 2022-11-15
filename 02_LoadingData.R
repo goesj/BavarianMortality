@@ -19,8 +19,8 @@ Bayern <- GermanyData[BY,] #Dataset with only Bavaria
 
 
 #add Regional Type to Bavarian Data
-Bayern$SN_KTYP4 <- Kreistypen[match(Bayern$ARS, Kreistypen$RS),"SN_KTYP4"]
-Bayern$KTYP4 <- Kreistypen[match(Bayern$ARS, Kreistypen$RS),"KTYP4"]
+Bayern$SN_KTYP4 <- RegionalType[match(Bayern$ARS, RegionalType$RS),"SN_KTYP4"]
+Bayern$KTYP4 <- RegionalType[match(Bayern$ARS, RegionalType$RS),"KTYP4"]
 
 #Change Direction, 4 is highest, 1 lowest
 Bayern$SN_KTYP4 <- ifelse(Bayern$SN_KTYP4==1,4,
