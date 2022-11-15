@@ -102,7 +102,7 @@ TestDataFun <- function(Data,Sex,LastYearObs, AdjMatType=2){
   Data <- Data %>% filter(Year > 2000)
   
   #Filter Year and Sex
-  Data <- Data %>% filter(., Sex==Sex & Year <=LastYearObs)
+  Data <- Data %>% filter(., Sex=={{Sex}} & Year <=LastYearObs)
   
   #create IDS
   Data$KreisID <- match(Data$RegionNumber,unique(Data$RegionNumber))
@@ -191,9 +191,9 @@ OutOfSampleData <- function(Data, Sex="female", LastYearObs=2016, h=1){
   LastYearTest <- LastYearObs+h #Last Year of Test Data
   
   #Filter OOS Data
-  FCSubset <- Data %>% filter(Data$Year>LastYearObs & 
-                              Data$Year<=LastYearTest & 
-                              Data$Sex==Sex)
+  FCSubset <- Data %>% filter(Year>LastYearObs & 
+                              Year<=LastYearTest & 
+                              Sex=={{Sex}})
   
   
   FCSubset$KreisID <- match(FCSubset$RegionNumber,unique(FCSubset$RegionNumber))
