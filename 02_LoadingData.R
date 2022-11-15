@@ -1,5 +1,7 @@
 ## Loading Data ##
-library(sf);library(openxlsx); library(tidyverse)
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sf,openxlsx)
+
 
 ### Regional Data####
 GermanyData <- read_sf(
