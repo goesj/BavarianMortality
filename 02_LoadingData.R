@@ -17,6 +17,18 @@ RegionalType <- read.xlsx(
 BY <- which(GermanyData$SN_L=="09") #Only Bavarias Region
 Bayern <- GermanyData[BY,] #Dataset with only Bavaria
 
+
+#add Regional Type to Bavarian Data
+Bayern$SN_KTYP4 <- Kreistypen[match(Bayern$ARS, Kreistypen$RS),"SN_KTYP4"]
+Bayern$KTYP4 <- Kreistypen[match(Bayern$ARS, Kreistypen$RS),"KTYP4"]
+
+#Change Direction, 4 is highest, 1 lowest
+Bayern$SN_KTYP4 <- ifelse(Bayern$SN_KTYP4==1,4,
+                          ifelse(Bayern$SN_KTYP4==2,3,
+                                 ifelse(Bayern$SN_KTYP4==3,2,1)))
+
+
+
 ## Population Data
 PopulationM <- read.xlsx(xlsxFile = file.path(getwd(),
                                               "Data/BY_12411(Population)_2000-17.xlsx"),
