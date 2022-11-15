@@ -1,6 +1,7 @@
 ##Load Libraries
-library(ggplot2); library(sf); 
-library(RColorBrewer); library(cowplot); library(ggdist); library(ggridges)
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(ggplot2,RColorBrewer, cowplot, ggdist)
+
 
 ### Load Functions
 source("01_Functions.R")
@@ -11,7 +12,7 @@ load("Data/TotalData.RData") #load Data
 load("Data/LifeExpFrameStacking.RData")
 
 ## Map Plot Year 17 (next to each other) ##
-InSampleData <- TestDataFun(TotalData, Sex="männlich",LastYearObs = 2017)
+InSampleData <- TestDataFun(TotalData, Sex="male",LastYearObs = 2017)
 
 #Save Results in Bavarian Data
 Bayern$LifeExpStack_Female<- LifeExpFrameFemaleStacking %>% 
@@ -184,7 +185,7 @@ ggdraw() +
 ######## PLOT LE Estrimate of Region#######
 #Which Region to use
 RegUsed <- "Bamberg (Krfr.St)"
-NumUsed <- InSampleData$Data$Kreis.Nummer[which(InSampleData$Data$Kreise.Name == RegUsed)[1]]
+NumUsed <- InSampleData$Data$RegionNumber[which(InSampleData$Data$RegionName == RegUsed)[1]]
 
 #Plot
 x11() 
@@ -197,8 +198,8 @@ x11()
     geom_lineribbon(aes(x = Year, y = Mean,lty=Type,fill=WUnique, ymin=PiLo, ymax=PiUp,
                         col=Sex),
                     alpha=0.5,size=0.8)+
-  scale_color_manual(values=c("weiblich"="#400040",
-                              "männlich"="#011f4b"))+
+  scale_color_manual(values=c("female"="#400040",
+                              "male"="#011f4b"))+
   scale_fill_manual(values = c("0.8w"="#e5cce5","0.5w"="#bf7fbf",
                                "0.8m"="#d1e1ec", "0.5m"="#b3cde0"))+ #values of ribbon (second value is 50%PI)
   theme_bw()+
