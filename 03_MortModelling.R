@@ -1,7 +1,7 @@
 ### Mort Modelling###
 ## Load Libraries
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(rstan)
+pacman::p_load(rstan, ggpubr)
 
 
 #### Load Data ####
@@ -10,10 +10,11 @@ load("Data/TotalData.RData") #load Data
 source("01_Functions.R")
 
 ##Geary C Plot
+x11()
 ggpubr::ggarrange(GearyCPlot(TotalData = TotalData, 
-                          Sex="female", LastYearObs = 2017),
+                          sex="female", LastYearObs = 2017),
                GearyCPlot(TotalData = TotalData, 
-                          Sex="male", LastYearObs = 2017),
+                          sex="male", LastYearObs = 2017),
           nrow = 2)
 
 ### Modelling ####
@@ -23,7 +24,7 @@ ggpubr::ggarrange(GearyCPlot(TotalData = TotalData,
 DataAPC_BYM2_Stan <- StanData(Data=TotalData, 
                               LastYearObs = 2016, #last Year of InSample Data 
                               AdjMatType = 3, #3 being binary indicators for SAR model (1 & 2 currently not in use)
-                              Sex="female", #Sex (weiblich = female, männlich = male)
+                              sex="female", #Sex (weiblich = female, männlich = male)
                               ModelType = "APC", #APC or RH
                               RegionType = "BYM2", #BYM2 or SAR
                               Cohort=TRUE, #Cohort Index True or False 
@@ -48,7 +49,7 @@ StanFit_APC_BYM2 <- rstan::extract(StanAPC_BYM2_F, permuted=TRUE, pars=c("mufor"
 
 ##### POSTERIOR PREDICTIVE CHECKS ######
 #1.) density Plot of posterior predictive distribution
-InSampleData <- TestDataFun(TotalData, Sex="female", LastYearObs=2016, AdjMatType = 3)
+InSampleData <- TestDataFun(TotalData, sex="female", LastYearObs=2016, AdjMatType = 3)
 InSampObs <-nrow(InSampleData$Data)
 
 #create 1000 replicas for each observation
@@ -61,7 +62,7 @@ for (i in 1:InSampObs) {
 
 YRepDensity(Draws = DrawsAPC_BYM2[1:100,], #taking only the first 100 is a lot faster 
           Deaths=InSampleData$Data$Deaths,
-          Sex="female")
+          sex="female")
 
 
 #2.) Proportion of zeros #####
@@ -76,7 +77,7 @@ bayesplot::ppc_stat_grouped(InSampleData$Data$Deaths, DrawsAPC_BYM2,
 
 #### Out of Sample Evaluation #### 
 #Get Out of Sample Data
-DataOOS <- OutOfSampleData(Data = TotalData,Sex="female", LastYearObs = 2016, h=1)
+DataOOS <- OutOfSampleData(Data = TotalData,sex="female", LastYearObs = 2016, h=1)
 
 
 FCMatStanAPC_BYM2 <- StanFit_APC_BYM2$mufor[1:1000,]
@@ -97,7 +98,7 @@ set.seed(420)
 PQuant <- PIlevel(80) #80% Quantil for coverage
 
 #Get Out of Sample Data
-DataOOS <- OutOfSampleData(Data = TotalData, Region="Bayern",Sex="female", LastYearObs = 2016, h=1)
+DataOOS <- OutOfSampleData(Data = TotalData, Region="Bayern",sex="female", LastYearObs = 2016, h=1)
 
 #Create list with Models to be evaluated
 ModelList <- list(APC_BYM2 = FCMatStanAPC_BYM2)
@@ -133,60 +134,62 @@ TotFCDatFrame %>% group_by(ModelName) %>%
 ### ----- STACKING EXAMPLE -----------------------------------------------------------------------------------
 
 #Example for Males
-#Calculation of Stacking Weights InSample 2001-2014, FC= 2015-2016
-DataAPC_BYM2_Stan_1516 <- StanData(Data=TotalData, 
-                              LastYearObs = 2014, #last Year of InSample Data 
+#Calculation of Stacking Weights InSample 2001-2010, FC= 2011-2014
+DataAPC_BYM2_Stan_1114<- StanData(Data=TotalData, 
+                              LastYearObs = 2011, #last Year of InSample Data 
                               AdjMatType = 3,
-                              Sex="male", #Sex (female = female, männlich = male)
+                              sex="male", #Sex (female = female, männlich = male)
                               ModelType = "APC", #APC or RH
                               RegionType = "BYM2", #BYM2 or SAR
                               Cohort=TRUE, #Cohort Index True or False 
-                              TFor = 2) #Forecast Horzion (how many years to forecast)
+                              TFor = 3) #Forecast Horzion (how many years to forecast)
 
-DataRH_BYM2_Stan_1516 <- StanData(Data=TotalData, 
-                                  LastYearObs = 2014, #last Year of InSample Data 
+DataRH_BYM2_Stan_1114 <- StanData(Data=TotalData, 
+                                  LastYearObs = 2011, #last Year of InSample Data 
                                   AdjMatType = 3,
-                                  Sex="male", #Sex (weiblich = female, männlich = male)
+                                  sex="male", #Sex (weiblich = female, männlich = male)
                                   ModelType = "RH", #APC or RH
                                   RegionType = "BYM2", #BYM2 or SAR
                                   Cohort=TRUE, #Cohort Index True or False 
-                                  TFor = 2)
+                                  TFor = 3)
 
 #See Appendix for Parameters of HMC Modelling For each Model
 library(rstan)
 options(mc.cores = parallel::detectCores())
-StanAPC_BYM2_M_1516 <- rstan::stan(file.path(getwd(),"StanCode/APC_BYM2.stan"),
-                              data=DataAPC_BYM2_Stan_1516,
-                              chains = 4, iter=5000,warmup=2500, save_warmup=FALSE, thin=5,
+StanAPC_BYM2_M_1114 <- rstan::stan(file.path(getwd(),"StanCode/APC_BYM2.stan"),
+                              data=DataAPC_BYM2_Stan_1114,
+                              chains = 4, iter=5000,warmup=2500, 
+                              save_warmup=FALSE, thin=5,
                               control = list(adapt_delta = 0.81))
 
 
 #See Appendix for Parameters of HMC Modelling For each Model
 library(rstan)
 options(mc.cores = parallel::detectCores())
-StanRH_BYM2_M_1516 <- rstan::stan(file.path(getwd(),"StanCode/RH_BYM2.stan"),
-                                   data=DataRH_BYM2_Stan_1516,
-                                   chains = 4, iter=5000,warmup=2500, save_warmup=FALSE, thin=5,
+StanRH_BYM2_M_1114 <- rstan::stan(file.path(getwd(),"StanCode/RH_BYM2.stan"),
+                                   data=DataRH_BYM2_Stan_1114,
+                                   chains = 4, iter=5000,warmup=2500, 
+                                  save_warmup=FALSE, thin=5,
                                    control = list(adapt_delta = 0.81))
 
 
 #Get Model Parameters and Calculation of Stacking Weights
-FCMatStanAPC_BYM2_1516<- rstan::extract(StanAPC_BYM2_M_1516, permuted=TRUE, pars="mufor")$mufor
-FCMatStanRH_BYM2_1516<- rstan::extract(StanRH_BYM2_M_1516, permuted=TRUE, pars="mufor")$mufor
+FCMatStanAPC_BYM2_1114<- rstan::extract(StanAPC_BYM2_M_1114, permuted=TRUE, pars="mufor")$mufor
+FCMatStanRH_BYM2_1114<- rstan::extract(StanRH_BYM2_M_1114, permuted=TRUE, pars="mufor")$mufor
 
 #Evaluation of Stacking Matrix
-ModelListStacking <- list(APC_BYM2=FCMatStanAPC_BYM2_1516,
-                          RH_BYM2=FCMatStanRH_BYM2_1516)
+ModelListStacking <- list(APC_BYM2=FCMatStanAPC_BYM2_1114,
+                          RH_BYM2=FCMatStanRH_BYM2_1114)
 
 DataOOS <- OutOfSampleData(Data = TotalData, Region="Bayern",
-                           Sex="male", LastYearObs = 2014, h=2)
+                           sex="male", LastYearObs = 2011, h=3)
 
-SWeights1516 <- StackingWeights(ObservedCount = DataOOS$D,
+SWeights1114 <- StackingWeights(ObservedCount = DataOOS$D,
                           FCMatList = ModelListStacking,
                           Exposure = DataOOS$ExposureFC)
 
 #For Calculation of Matrix use StackingMat function with the according weights
 #here In-Sample Matrix
-InSampleStackingMat <- list(rstan::extract(StanAPC_BYM2_M_1516, permuted=TRUE, pars="MHat")$Mhat,
-                            rstan::extract(StanRH_BYM2_M_1516, permuted=TRUE, pars="MHat")$Mhat) %>% 
-                        StackingMat(Weights = SWeights1516, FCMatList = .)
+InSampleStackingMat <- list(rstan::extract(FCMatStanAPC_BYM2_1114, permuted=TRUE, pars="MHat")$Mhat,
+                            rstan::extract(FCMatStanRH_BYM2_1114, permuted=TRUE, pars="MHat")$Mhat) %>% 
+                        StackingMat(Weights = SWeights1114, FCMatList = .)
