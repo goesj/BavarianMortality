@@ -1,6 +1,8 @@
 ### Mort Modelling###
 ## Load Libraries
-library(tidyverse); library(rstan); library(bayesplot); library(ggpubr); 
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(rstan)
+
 
 #### Load Data ####
 load("Data/TotalData.RData") #load Data
@@ -9,9 +11,9 @@ source("01_Functions.R")
 
 ##Geary C Plot
 ggpubr::ggarrange(GearyCPlot(TotalData = TotalData, 
-                          Sex="weiblich", LastYearObs = 2017),
+                          Sex="female", LastYearObs = 2017),
                GearyCPlot(TotalData = TotalData, 
-                          Sex="männlich", LastYearObs = 2017),
+                          Sex="male", LastYearObs = 2017),
           nrow = 2)
 
 ### Modelling ####
@@ -21,7 +23,7 @@ ggpubr::ggarrange(GearyCPlot(TotalData = TotalData,
 DataAPC_BYM2_Stan <- StanData(Data=TotalData, 
                               LastYearObs = 2016, #last Year of InSample Data 
                               AdjMatType = 3, #3 being binary indicators for SAR model (1 & 2 currently not in use)
-                              Sex="weiblich", #Sex (weiblich = female, männlich = male)
+                              Sex="female", #Sex (weiblich = female, männlich = male)
                               ModelType = "APC", #APC or RH
                               RegionType = "BYM2", #BYM2 or SAR
                               Cohort=TRUE, #Cohort Index True or False 
@@ -46,7 +48,7 @@ StanFit_APC_BYM2 <- rstan::extract(StanAPC_BYM2_F, permuted=TRUE, pars=c("mufor"
 
 ##### POSTERIOR PREDICTIVE CHECKS ######
 #1.) density Plot of posterior predictive distribution
-InSampleData <- TestDataFun(TotalData, Sex="weiblich", LastYearObs=2016, AdjMatType = 3)
+InSampleData <- TestDataFun(TotalData, Sex="female", LastYearObs=2016, AdjMatType = 3)
 InSampObs <-nrow(InSampleData$Data)
 
 #create 1000 replicas for each observation
@@ -59,7 +61,7 @@ for (i in 1:InSampObs) {
 
 YRepDensity(Draws = DrawsAPC_BYM2[1:100,], #taking only the first 100 is a lot faster 
           Deaths=InSampleData$Data$Deaths,
-          Sex="weiblich")
+          Sex="female")
 
 
 #2.) Proportion of zeros #####
@@ -74,7 +76,7 @@ bayesplot::ppc_stat_grouped(InSampleData$Data$Deaths, DrawsAPC_BYM2,
 
 #### Out of Sample Evaluation #### 
 #Get Out of Sample Data
-DataOOS <- OutOfSampleData(Data = TotalData,Sex="weiblich", LastYearObs = 2016, h=1)
+DataOOS <- OutOfSampleData(Data = TotalData,Sex="female", LastYearObs = 2016, h=1)
 
 
 FCMatStanAPC_BYM2 <- StanFit_APC_BYM2$mufor[1:1000,]
@@ -95,7 +97,7 @@ set.seed(420)
 PQuant <- PIlevel(80) #80% Quantil for coverage
 
 #Get Out of Sample Data
-DataOOS <- OutOfSampleData(Data = TotalData, Region="Bayern",Sex="weiblich", LastYearObs = 2016, h=1)
+DataOOS <- OutOfSampleData(Data = TotalData, Region="Bayern",Sex="female", LastYearObs = 2016, h=1)
 
 #Create list with Models to be evaluated
 ModelList <- list(APC_BYM2 = FCMatStanAPC_BYM2)
@@ -107,12 +109,12 @@ TotFCDatFrame <- ModelList %>%
   mutate(ModelName = transformer(ModelID,names(ModelList)))
 
 # Add Information for Out of Sample Evaluation
-TotFCDatFrame <- TotFCDatFrame %>% mutate("Region"=rep(DataOOS$FCSubset$Kreise.Name,length(unique(ModelName))), #Region Name
-                                          "RegionNum"=rep(DataOOS$FCSubset$Kreis.Nummer,length(unique(ModelName))), #Region Number
+TotFCDatFrame <- TotFCDatFrame %>% mutate("Region"=rep(DataOOS$FCSubset$RegionName,length(unique(ModelName))), #Region Name
+                                          "RegionNum"=rep(DataOOS$FCSubset$RegionNumber,length(unique(ModelName))), #Region Number
                                           "Age"=rep(DataOOS$FCSubse$AgeID,length(unique(ModelName))),#Age
                                           "RegID"=rep(DataOOS$FCSubset$KreisID,length(unique(ModelName))),#KreisID,
                                           "D"=rep(DataOOS$FCSubset$Deaths,length(unique(ModelName))), #Deaths
-                                          "Jahr"=rep(DataOOS$FCSubset$Jahr.R, length(unique(ModelName)))) #Year
+                                          "Jahr"=rep(DataOOS$FCSubset$Year, length(unique(ModelName)))) #Year
 
 #Model Evaluation
 TotFCDatFrame %>% group_by(ModelName) %>%
@@ -135,7 +137,7 @@ TotFCDatFrame %>% group_by(ModelName) %>%
 DataAPC_BYM2_Stan_1516 <- StanData(Data=TotalData, 
                               LastYearObs = 2014, #last Year of InSample Data 
                               AdjMatType = 3,
-                              Sex="männlich", #Sex (weiblich = female, männlich = male)
+                              Sex="male", #Sex (female = female, männlich = male)
                               ModelType = "APC", #APC or RH
                               RegionType = "BYM2", #BYM2 or SAR
                               Cohort=TRUE, #Cohort Index True or False 
@@ -144,7 +146,7 @@ DataAPC_BYM2_Stan_1516 <- StanData(Data=TotalData,
 DataRH_BYM2_Stan_1516 <- StanData(Data=TotalData, 
                                   LastYearObs = 2014, #last Year of InSample Data 
                                   AdjMatType = 3,
-                                  Sex="männlich", #Sex (weiblich = female, männlich = male)
+                                  Sex="male", #Sex (weiblich = female, männlich = male)
                                   ModelType = "RH", #APC or RH
                                   RegionType = "BYM2", #BYM2 or SAR
                                   Cohort=TRUE, #Cohort Index True or False 
@@ -177,7 +179,7 @@ ModelListStacking <- list(APC_BYM2=FCMatStanAPC_BYM2_1516,
                           RH_BYM2=FCMatStanRH_BYM2_1516)
 
 DataOOS <- OutOfSampleData(Data = TotalData, Region="Bayern",
-                           Sex="männlich", LastYearObs = 2014, h=2)
+                           Sex="male", LastYearObs = 2014, h=2)
 
 SWeights1516 <- StackingWeights(ObservedCount = DataOOS$D,
                           FCMatList = ModelListStacking,
