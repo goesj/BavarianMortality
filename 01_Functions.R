@@ -1,6 +1,7 @@
-## Functions needed in Main Script ##
-library(INLA); library(Qtools); library(tidyverse); library(scoringRules)
-library(MortCast); library(spdep); library(future.apply)
+## Libraries needed for Functions###
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse,scoringRules,Qtools,MortCast,
+               future.apply,spdep,ggpubr,INLA,bayesplot)
 
 ################ 1.1 Functions for Generation of Data ##########################
 
