@@ -96,13 +96,13 @@ CohortIndex <- function(agegroup, time, maxAge, M){
 }
 
 #Generation of Test Data
-TestDataFun <- function(Data,Sex,LastYearObs, AdjMatType=2){
+TestDataFun <- function(Data,sex,LastYearObs, AdjMatType=2){
   
   #Filter Year >2000, since 2000 does not have values for exposure
   Data <- Data %>% filter(Year > 2000)
   
   #Filter Year and Sex
-  Data <- Data %>% filter(., Sex=={{Sex}} & Year <=LastYearObs)
+  Data <- Data %>% filter(., Sex=={{sex}} & Year <=LastYearObs)
   
   #create IDS
   Data$KreisID <- match(Data$RegionNumber,unique(Data$RegionNumber))
@@ -141,12 +141,12 @@ TestDataFun <- function(Data,Sex,LastYearObs, AdjMatType=2){
 }
 
 #Function for Gerneration of Data as Input for Stan Models
-StanData <- function(Data, LastYearObs=2016,Sex,AdjMatType=3, 
+StanData <- function(Data, LastYearObs=2016,sex,AdjMatType=3, 
                      ModelType, RegionType="BYM2", Cohort=TRUE, TFor=1){
   #Get actual Data
   DataInput <- TestDataFun(Data=Data, 
                            AdjMatType=AdjMatType, 
-                           LastYearObs=LastYearObs, Sex=Sex)
+                           LastYearObs=LastYearObs, sex=sex)
   
   #Basics
   DataOut <- list("T"=max(DataInput$Data$YearID),"A"=max(DataInput$Data$AgeID),
@@ -186,14 +186,14 @@ StanData <- function(Data, LastYearObs=2016,Sex,AdjMatType=3,
 
 
 ### Creation of Out of Sample Data
-OutOfSampleData <- function(Data, Sex="female", LastYearObs=2016, h=1){
+OutOfSampleData <- function(Data, sex="female", LastYearObs=2016, h=1){
   
   LastYearTest <- LastYearObs+h #Last Year of Test Data
   
   #Filter OOS Data
   FCSubset <- Data %>% filter(Year>LastYearObs & 
                               Year<=LastYearTest & 
-                              Sex=={{Sex}})
+                              Sex=={{sex}})
   
   
   FCSubset$KreisID <- match(FCSubset$RegionNumber,unique(FCSubset$RegionNumber))
@@ -597,9 +597,9 @@ LifeExpSampleFunction2 <- function(FCMatIn, FCMatOut, PI, sex="female",
 
 ############## 1.6. Function for Graphics ######################################
 #Function for Plotting Geary C
-GearyCPlot <- function(TotalData, Sex, LastYearObs){
+GearyCPlot <- function(TotalData, LastYearObs,sex){
   #Get InSample Data
-  InSampleData <- TestDataFun(TotalData, Sex=Sex, 
+  InSampleData <- TestDataFun(TotalData, sex=sex, 
                               LastYearObs=LastYearObs, 
                               AdjMatType = 1)
   
@@ -639,8 +639,8 @@ GearyCPlot <- function(TotalData, Sex, LastYearObs){
            "GearyC_Sd"=ResDat$Sd)
   
   #Colors for Plot
-  Col <- if(Sex=="male") {c("#b3cde0","#011f4b")} else {c("#bf7fbf","#400040")} #select colors
-  Main <- ifelse(Sex=="male","Males","Females")
+  Col <- if(sex=="male") {c("#b3cde0","#011f4b")} else {c("#bf7fbf","#400040")} #select colors
+  Main <- ifelse(sex=="male","Males","Females")
   
   #Plot Result
   P <- ggplot(data=PlotData, aes(x = t, y=GearyC_Mean, group=t))+
@@ -653,8 +653,8 @@ GearyCPlot <- function(TotalData, Sex, LastYearObs){
 }
 
 #Function for Creation of Yrep Density 
-YRepDensity <- function(Draws, Deaths, Sex){
-  if(Sex=="female"){
+YRepDensity <- function(Draws, Deaths, sex){
+  if(sex=="female"){
     bayesplot::color_scheme_set("purple")
   } else {
     bayesplot::color_scheme_set("blue")
