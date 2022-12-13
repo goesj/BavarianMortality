@@ -7,9 +7,9 @@ source("../01_Functions.R")
 load(file = "../Data/TotalData.RData") #load Data
 load(file = "../Data/LifeExpFrameStacking.RData") #Load Results
 
-RegionList <- TotalData$Kreis.Nummer %>% unique() %>% as.list()
+RegionList <- TotalData$RegionName %>% unique() %>% as.list()
 
-NamesEnglish <- gsub("(Lkr)", "Region", unique(TotalData$Kreise.Name)) #Change Lkr to Region
+NamesEnglish <- gsub("(Lkr)", "Region", unique(TotalData$RegionName)) #Change Lkr to Region
 NamesEnglish <- gsub("(Krfr.St)", "City", NamesEnglish) #Change Krfr. St to City
 
 names(RegionList) <- NamesEnglish  
@@ -47,6 +47,7 @@ ui <- fluidPage(
 # Define server logic required to draw plots
 server <- function(input, output) {
   # 1. Output Map Plot
+  
   output$RegionPlot <- renderPlot({ 
     Bayern <- Bayern %>% 
       mutate("LifeExpStack_F" = LifeExpFrameFemaleStacking %>% 
@@ -97,25 +98,27 @@ server <- function(input, output) {
         slice(1:2) %>% #only first two rows
         select(1:5) %>% #only first 5 columns
         pivot_wider(id_cols = 1:2, names_from = 5, values_from = 3:4) %>% #pivot wide
-        select(c(1:4,6,5)), #reorder
+        select(c(1:4,6,5)) %>% #reorder
+        mutate("Width 80"=PiUp_0.8-PiLo_0.8), 
       #Male
       LifeExpFrameMaleStacking %>% filter(RegNumber== input$Region & Year == input$Year) %>%
         slice(1:2) %>% #only first two rows
         select(1:5) %>% #only first 5 columns
         pivot_wider(id_cols = 1:2, names_from = 5, values_from = 3:4) %>% #pivot wide
-        select(c(1:4,6,5)) #reorder
+        select(c(1:4,6,5)) %>% #reorder
+        mutate("Width 80"=PiUp_0.8-PiLo_0.8)
     ) %>% mutate("Sex"=c("Female","Male"),.before=1) %>%
       rename(., "10%" = PiLo_0.8,
              "25%"=PiLo_0.5,
              "75%"= PiUp_0.5,
-             "90%" = PiUp_0.8) 
-    #   mutate_if(is.numeric, ~round(., 2)) # round numeric columns (later transformed into character)
-    # 
-    # # as_tibble(cbind(names(Table), t(Table))) %>% #transpose
-    # #   rename(.," " = V1,                     #rename columns
-    # #          "Female"=V2,
-    # #          "Male" =V3) %>%
-    # #   slice(-1)
+             "90%" = PiUp_0.8) %>% 
+      mutate_if(is.numeric, ~round(., 2)) # round numeric columns (later transformed into character)
+    
+    as_tibble(cbind(names(Table), t(Table))) %>% #transpose
+      rename(.," " = V1,                     #rename columns
+             "Female"=V2,
+             "Male" =V3) %>%
+      slice(-1)
   })
   
   #3. Output Line Plot of Life Expectancy
@@ -131,10 +134,6 @@ server <- function(input, output) {
       scale_fill_manual(values = c("0.8w"="#e5cce5","0.5w"="#bf7fbf",
                                    "0.8m"="#d1e1ec", "0.5m"="#b3cde0"))+ #values of ribbon (second value is 50%PI)
       geom_vline(xintercept = as.character(input$Year), lty = 4)+
-      # geom_point(aes(x=as.character(input$Year),y=
-      #                  subset(LifeExpFrameFemaleStacking, 
-      #                         Year == input$Year &  RegNumber == input$Region, select = Mean)[1,]), 
-      #            col="red", pch=18, size=4)+
       theme_bw()+
       ylab("Life Expectancy")+xlab("Year")+
       scale_x_discrete(breaks=c(2001,2010,2020,2030))+
@@ -153,7 +152,7 @@ server <- function(input, output) {
                       col = "#011f4b",alpha=0.5,size=0.8,group=1)+
       scale_fill_manual(values = c("0.8w"="#e5cce5","0.5w"="#bf7fbf",
                                    "0.8m"="#d1e1ec", "0.5m"="#b3cde0"))+ #values of ribbon (second value is 50%PI)
-      geom_vline(xintercept = as.character(input$Year), lty = 4)+
+      
       theme_bw()+
       ylab("Life Expectancy")+xlab("Year")+
       scale_x_discrete(breaks=c(2001,2010,2020,2030))+
