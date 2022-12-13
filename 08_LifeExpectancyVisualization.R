@@ -1,4 +1,4 @@
-##Load Libraries
+## FILE FOR VISUALISATION OF RESULTS############################################
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(ggplot2,RColorBrewer, cowplot, ggdist,
                ggridges)
@@ -9,48 +9,53 @@ source("01_Functions.R")
 #### Load Data ####
 load("Data/TotalData.RData") #load Data
 
-## Load Life Expectancy Stacking Frame Results
+## Load Life Expectancy Stacking Frame Results (uploaded in Git)
 load("Data/LifeExpFrameStacking.RData")
 
 ################################################################################
 ##### 1) Plot Mean LE Estimates for all Regions in 2017 in Map #################
 ################################################################################
-InSampleData <- TestDataFun(TotalData, Sex="male",LastYearObs = 2017)
+InSampleData <- TestDataFun(TotalData, sex="male",LastYearObs = 2017)
 
-#Save Results in Bavarian Data
+#Save Results in Bavarian Data Frame
 Bayern$LifeExpStack_Female<- LifeExpFrameFemaleStacking %>% 
                                           filter(Year == 2017 & 
                                                  Type == "InSample" & 
                                                  Width == 0.8) %>%
                                           select(Mean) %>% pull()
-                                                              
-Bayern$RankLifeExpF <- rank(-Bayern$LifeExpStack_Female, ties.method = "random") #Rank with highest value being 1
+#calculation of Rank                                                              
+Bayern$RankLifeExpF <- rank(-Bayern$LifeExpStack_Female, 
+                            ties.method = "random") #Rank with highest value being 1
 
 
-#Save Results in Bavarian Data
+#Save Results in Bavarian Data (for males)
 Bayern$LifeExpStack_Male<- LifeExpFrameMaleStacking %>% 
                                         filter(Year == 2017 & 
                                                  Type == "InSample" & 
                                                  Width == 0.8) %>%
                                         select(Mean) %>% pull()
 
-Bayern$RankLifeExpM <- rank(-Bayern$LifeExpStack_Male, ties.method = "random") #Rank with highest value being 1
+Bayern$RankLifeExpM <- rank(-Bayern$LifeExpStack_Male, 
+                            ties.method = "random") #Rank with highest value being 1
 
+#Create own Color Palette## For Females ###
+Mypal <- brewer.pal(n = 11, name = "RdBu") 
 
-Mypal <- brewer.pal(n = 11, name = "RdBu") #Create own Color Palette## For Females ###
-#Creation of Plot in Text
+#Create MAP first
 g1F <- ggplot(data = Bayern) +
-  geom_sf(aes(fill = LifeExpStack_Female), alpha = 0.9, colour = "transparent", size = 0) +
-  geom_sf_text(aes(label=RankLifeExpF, color=LifeExpStack_Female <83 | LifeExpStack_Female > 84.5 ),fontface=2, size=4.5)+
-  scale_color_manual(guide = FALSE, values = c("black", "white"))+ #plot color depending on value see (https://stackoverflow.com/questions/47281365/text-color-based-on-contrast-against-background)
+  geom_sf(aes(fill = LifeExpStack_Female), alpha = 0.9, 
+          colour = "transparent", size = 0) +
+  geom_sf_text(aes(label=RankLifeExpF, 
+                   color=LifeExpStack_Female <83 | LifeExpStack_Female > 84.5 ),
+               fontface=2, size=4.5)+
+  scale_color_manual(guide = FALSE, values = c("black", "white"))+ 
   scale_fill_gradientn(colors=Mypal)+
   ggtitle("a. Female Life Expectancy")+
   theme_void() + 
   theme(legend.position = "none",
         plot.title = element_text(size = 25,hjust=0.5, face="bold")) 
 
-## For Females ###
-#Create Dataframe for ggplot object
+# Crearte Kerner Density Estimate of LE
 BayernData <- data.frame("Mean"=Bayern$LifeExpStack_Female,
                          "Group"=1)
 g2F <- ggplot(BayernData, aes(x = Mean, y = Group, fill = stat(x))) +
@@ -68,7 +73,9 @@ g2FDash <- g2F+ theme(legend.position = "none") #remove legend
 g3Fplot <- as_ggplot(g3F) #legend as own plot
 
 
-#for single picture, change font size text =3, theme text =15 in g1, legend text = 10 in g2
+#for single picture, change font size text =3, theme text =15 in g1, 
+#legend text = 10 in g2
+#Add Map, Kernel Density and Legend together
 gFemale <- 
   ggdraw() +
   draw_plot(g1F)+
@@ -76,11 +83,13 @@ gFemale <-
   draw_plot(g3Fplot, x = 0.80, y = .715, width = .1, height = .1)
 
 
-### FOR MALES ###
+### Same Plot for males
 g1M <- ggplot(data = Bayern) +
   geom_sf(aes(fill = LifeExpStack_Male), alpha = 0.9, colour = "transparent", size = 0) +
-  geom_sf_text(aes(label=RankLifeExpM, color=LifeExpStack_Male <78.1 | LifeExpStack_Male > 80.5 ),fontface=2, size=4.5)+
-  scale_color_manual(guide = FALSE, values = c("black", "white"))+ #plot color depending on value see (https://stackoverflow.com/questions/47281365/text-color-based-on-contrast-against-background)
+  geom_sf_text(aes(label=RankLifeExpM, 
+                   color=LifeExpStack_Male <78.1 | LifeExpStack_Male > 80.5 ),
+               fontface=2, size=4.5)+
+  scale_color_manual(guide = FALSE, values = c("black", "white"))+ 
   scale_fill_gradientn(colors=Mypal)+
   ggtitle("b. Male Life Expectancy")+
   theme_void() + 
@@ -88,7 +97,7 @@ g1M <- ggplot(data = Bayern) +
         plot.title = element_text(size = 25, hjust=0.5, face="bold")) 
 
 
-#Create Dataframe for ggplot object
+#Create Kernel Density Estimate
 BayernDataM <- data.frame("Mean"=Bayern$LifeExpStack_Male,
                           "Group"=1)
 
@@ -124,12 +133,12 @@ plot_grid(gFemale, gMale) #save/look at in 16 to 9 for proper format
 ##### 2) Plot Difference in LE for Females and Males between 2001  and 2032 ####
 ################################################################################
 DiffExpFemale <- (LifeExpFrameFemaleStacking %>% 
-                    filter(Year == 2030 & 
-                             Width == 0.8) %>% #get only one width as they are double 
+                    filter(Year == 2030 & #select Year
+                             Width == 0.8) %>% #get only one width  
                     select(Mean) %>% pull()) - 
                   (LifeExpFrameFemaleStacking %>% 
                         filter(Year == 2001 & 
-                             Width == 0.8) %>% #get only one width as they are double 
+                             Width == 0.8) %>% #get only one width  
                         select(Mean) %>% pull())
 
 DiffExpMale <- (LifeExpFrameMaleStacking %>% 
@@ -181,7 +190,7 @@ gLeg <- get_legend(gMDiff)
 gMDiffNoLeg <- gMDiff + theme(legend.position = "none")
 
 
-x11()
+### plot both together
 ggdraw() +
   draw_plot(gFDiff, x = 0.01, y = 0.1, width = 0.45, height = 0.95)+
   draw_plot(gMDiffNoLeg, x = 0.39, y = .1, width=0.45, height=0.95)+
@@ -194,10 +203,12 @@ ggdraw() +
 ################################################################################
 #Which Region to use 
 RegUsed <- "Bamberg (Krfr.St)"
-NumUsed <- InSampleData$Data$RegionNumber[which(InSampleData$Data$RegionName == RegUsed)[1]]
+NumUsed <- InSampleData$Data %>% 
+  filter(RegionName==RegUsed) %>% 
+  select(RegionNumber) %>% 
+  head(., 1) %>% pull()
 
 #Plot
-x11() 
 #combine by rbind in and Out of Sample
 rbind(LifeExpFrameFemaleStacking, #combine males and females
       LifeExpFrameMaleStacking) %>% 
