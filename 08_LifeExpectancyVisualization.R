@@ -15,7 +15,7 @@ load("Data/LifeExpFrameStacking.RData")
 ################################################################################
 ##### 1) Plot Mean LE Estimates for all Regions in 2017 in Map #################
 ################################################################################
-InSampleData <- TestDataFun(TotalData, sex="male",LastYearObs = 2017)
+InSampleData <- TrainingDataFun(TotalData, sex="male",LastYearObs = 2017)
 
 #Save Results in Bavarian Data Frame
 Bayern$LifeExpStack_Female<- LifeExpFrameFemaleStacking %>% 

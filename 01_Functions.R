@@ -27,7 +27,7 @@ CARData4Stan <- function(NeighborhoodMatrix){ #Region in Stan Matrix
                "node1Names"=node1Names, node2Names=node2Names))
 } 
 
-#Currently not in use
+#Currently not in use !!!!
 #Function for Creating of Adjacency Matrix (for SAR MODEL)
 AdjMatFun <- function(AdjMat, type=2, TypeVek){
   AdjMatNew <- as.matrix(AdjMat) #Create new Matrix
@@ -69,7 +69,7 @@ AdjMatFun <- function(AdjMat, type=2, TypeVek){
 #Code taken from Morris (2019) 
 #https://mc-stan.org/users/documentation/case-studies/icar_stan.html
 ScalingFacBYM2 <- function(Nodes, AdjMat){
-  #Add a small jitter to the diagonal for numerical stability (optional but recommended)
+  #Add a small jitter to the diagonal for numerical stability 
   Q <- Diagonal(Nodes$N, rowSums(AdjMat)) - AdjMat
   # Compute the diagonal elements of the covariance matrix subject to the 
   # constraint that the entries of the ICAR sum to zero.
@@ -95,8 +95,8 @@ CohortIndex <- function(agegroup, time, maxAge, M){
   return(k=M*(maxAge-agegroup)+time)
 }
 
-#Generation of Test Data
-TestDataFun <- function(Data,sex,LastYearObs, AdjMatType=2){
+#Generation of Training Data
+TrainingDataFun <- function(Data,sex,LastYearObs, AdjMatType=3){
   
   #Filter Year >2000, since 2000 does not have values for exposure
   Data <- Data %>% filter(Year > 2000)
@@ -144,7 +144,7 @@ TestDataFun <- function(Data,sex,LastYearObs, AdjMatType=2){
 StanData <- function(Data, LastYearObs=2016,sex,AdjMatType=3, 
                      ModelType, RegionType="BYM2", Cohort=TRUE, TFor=1){
   #Get actual Data
-  DataInput <- TestDataFun(Data=Data, 
+  DataInput <- TrainingDataFun(Data=Data, 
                            AdjMatType=AdjMatType, 
                            LastYearObs=LastYearObs, sex=sex)
   
@@ -599,7 +599,7 @@ LifeExpSampleFunction2 <- function(FCMatIn, FCMatOut, PI, sex="female",
 #Function for Plotting Geary C
 GearyCPlot <- function(TotalData, LastYearObs,sex){
   #Get InSample Data
-  InSampleData <- TestDataFun(TotalData, sex=sex, 
+  InSampleData <- TrainingDataFun(TotalData, sex=sex, 
                               LastYearObs=LastYearObs, 
                               AdjMatType = 1)
   

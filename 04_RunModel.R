@@ -15,13 +15,9 @@ source("01_Functions.R")
 # For other model change Parameter in Function accordingly
 DataAPC_BYM2_Stan <- StanData(Data=TotalData, 
                               LastYearObs = 2014, #last Year of InSample Data 
-                              AdjMatType = 3, #3 being binary indicators (1 & 2 currently not in use)
-                              sex="female", #Sex (weiblich = female, männlich = male)
+                              sex="female", #Sex 
                               ModelType = "APC", #APC or RH
-                              RegionType = "BYM2", #BYM2 or SAR
-                              Cohort=TRUE, #Cohort Index True or False 
-                              #e.g. for APC Family (TRUE = APC, FALSE = AP)
-                              TFor = 3) #Forecast Horzion (how many years to forecast)
+                              TFor = 3) #Forecast Horzion 
 
 #2.) run Stan Code
 #See Appendix for Parameters of HMC Modelling For each Model

@@ -15,9 +15,10 @@ StanFit_APC_BYM2 <- rstan::extract(StanAPC_BYM2_F, permuted=TRUE,
                                    pars=c("mufor","lambdahat","MHat"))
 
 #Create replicate Data  
-InSampleData <- TestDataFun(TotalData, sex="female", 
+InSampleData <- TrainingDataFun(TotalData, sex="female", 
                             LastYearObs=2016, 
-                            AdjMatType = 3)
+                            AdjMatType = 3) 
+
 InSampObs <-nrow(InSampleData$Data)
 
 #create 1000 replicas for each observation
