@@ -23,9 +23,9 @@ Bayern$LifeExpStack_Female<- LifeExpFrameFemaleStacking %>%
                                                  Type == "InSample" & 
                                                  Width == 0.8) %>%
                                           select(Mean) %>% pull()
-#calculation of Rank                                                              
+#calculation of Rank with highest value being 1                                                            
 Bayern$RankLifeExpF <- rank(-Bayern$LifeExpStack_Female, 
-                            ties.method = "random") #Rank with highest value being 1
+                            ties.method = "random") 
 
 
 #Save Results in Bavarian Data (for males)
@@ -34,9 +34,9 @@ Bayern$LifeExpStack_Male<- LifeExpFrameMaleStacking %>%
                                                  Type == "InSample" & 
                                                  Width == 0.8) %>%
                                         select(Mean) %>% pull()
-
+#Rank with highest value being 1
 Bayern$RankLifeExpM <- rank(-Bayern$LifeExpStack_Male, 
-                            ties.method = "random") #Rank with highest value being 1
+                            ties.method = "random") 
 
 #Create own Color Palette## For Females ###
 Mypal <- brewer.pal(n = 11, name = "RdBu") 
@@ -85,7 +85,8 @@ gFemale <-
 
 ### Same Plot for males
 g1M <- ggplot(data = Bayern) +
-  geom_sf(aes(fill = LifeExpStack_Male), alpha = 0.9, colour = "transparent", size = 0) +
+  geom_sf(aes(fill = LifeExpStack_Male), alpha = 0.9, colour = "transparent", 
+          size = 0) +
   geom_sf_text(aes(label=RankLifeExpM, 
                    color=LifeExpStack_Male <78.1 | LifeExpStack_Male > 80.5 ),
                fontface=2, size=4.5)+
@@ -116,7 +117,8 @@ g3Mplot <- as_ggplot(g3M) #legend as own plot
 
 
 
-#for single picture, change font size text =3, theme text =15 in g1, legend text = 10 in g2
+#for single picture, change font size text =3, theme text =15 in g1, 
+#legend text = 10 in g2
 gMale <- ggdraw() +
   draw_plot(g1M)+
   draw_plot(g2MDash, x = 0.71, y = .8, width = .29, height = .15)+
