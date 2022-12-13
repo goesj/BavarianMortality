@@ -12,6 +12,9 @@ load(file="../Results/StanAPC_BYM2_F.RData")
 DataOOS <- OutOfSampleData(Data = TotalData,sex="female", 
                            LastYearObs = 2014, h=3)
 
+#Get Samples from Posterior
+StanFit_APC_BYM2 <- rstan::extract(StanAPC_BYM2_F, inc_warmup=FALSE)
+
 #Get 1000 Draws of predicted mortality rates
 FCMatStanAPC_BYM2 <- StanFit_APC_BYM2$mufor[1:1000,]
 
@@ -57,7 +60,7 @@ TotFCDatFrame <- TotFCDatFrame %>%
 TotFCDatFrame %>% group_by(ModelName) %>% #group_by Model
   summarise("MeanLog"=mean(logScore), #calculate mean scores
             "MeanDSS"=mean(DSS),
-            "MeanRPS"=mean(CRPSEmp),
+            "MeanRPS"=mean(RPSEmp),
             "MAE"=mean(abs(D-MeanVal)),
             "RMSE"=sqrt(mean((D-MeanVal)^2)), #Root Mean Squared Error
             "Coverage"=pi_accuracy(PIL=PIL_mid,
