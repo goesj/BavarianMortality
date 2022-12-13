@@ -8,7 +8,7 @@ source("01_Functions.R")
 
 ####### -----------   MODEL EVALUATION ------------------- #####################  
 load(file="../Results/StanAPC_BYM2_F.RData")
-#Get Out of Sample Data
+#Get Out of Sample Data (Test Data)
 DataOOS <- OutOfSampleData(Data = TotalData,sex="female", 
                            LastYearObs = 2014, h=3)
 

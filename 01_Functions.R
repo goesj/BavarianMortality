@@ -201,7 +201,7 @@ OutOfSampleData <- function(Data, sex="female", LastYearObs=2016, h=1){
   FCSubset$AgeID <- match(FCSubset$AgeGroup, unique(FCSubset$AgeGroup))
   
   #Get Deaths and Exposure
-  D <- FCSubset$Deahts
+  D <- FCSubset$Deaths
   ExposureFC <- FCSubset$Exposure
   
   return(list("FCSubset"=FCSubset,
