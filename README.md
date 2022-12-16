@@ -1,5 +1,7 @@
 # BavarianMortality
-Estimation of regional mortality rates using Bayesian hierarchical models
+Estimation of regional mortality rates using Bayesian hierarchical models.
+Regional Mortality is forecasted using Bayesian implementation of the APC and RH model extended with the BYM2 prior to model spatial dependencies. 
+
 
 ## Models 
 There are a collection of Bayesian hierarchical models found in `StanCode` that were used for the analysis. 
