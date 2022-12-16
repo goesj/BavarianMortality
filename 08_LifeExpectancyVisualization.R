@@ -1,7 +1,7 @@
 ## FILE FOR VISUALISATION OF RESULTS############################################
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(ggplot2,RColorBrewer, cowplot, ggdist,
-               ggridges)
+               ggridges, ggpubr)
 
 
 ### Load Functions
@@ -39,7 +39,7 @@ Bayern$RankLifeExpM <- rank(-Bayern$LifeExpStack_Male,
                             ties.method = "random") 
 
 #Create own Color Palette## For Females ###
-Mypal <- brewer.pal(n = 11, name = "RdBu") 
+Mypal <- RColorBrewer::brewer.pal(n = 11, name = "RdBu") 
 
 #Create MAP first
 g1F <- ggplot(data = Bayern) +
@@ -55,11 +55,11 @@ g1F <- ggplot(data = Bayern) +
   theme(legend.position = "none",
         plot.title = element_text(size = 25,hjust=0.5, face="bold")) 
 
-# Crearte Kerner Density Estimate of LE
+# Crarte Kernel Density Estimate of LE
 BayernData <- data.frame("Mean"=Bayern$LifeExpStack_Female,
                          "Group"=1)
 g2F <- ggplot(BayernData, aes(x = Mean, y = Group, fill = stat(x))) +
-  geom_density_ridges_gradient(scale = 3, rel_min_height = 0.001) +
+  ggridges::geom_density_ridges_gradient(scale = 3, rel_min_height = 0.001) +
   scale_fill_gradientn(colours = Mypal)+
   theme_void()+
   theme(legend.position = "bottom",
@@ -68,19 +68,19 @@ g2F <- ggplot(BayernData, aes(x = Mean, y = Group, fill = stat(x))) +
         legend.text=element_text(face = "bold", size=15))
 
 
-g3F <- get_legend(g2F) #extract the legend 
+g3F <- ggpubr::get_legend(g2F) #extract the legend 
 g2FDash <- g2F+ theme(legend.position = "none") #remove legend
-g3Fplot <- as_ggplot(g3F) #legend as own plot
+g3Fplot <- ggpubr::as_ggplot(g3F) #legend as own plot
 
 
 #for single picture, change font size text =3, theme text =15 in g1, 
 #legend text = 10 in g2
 #Add Map, Kernel Density and Legend together
 gFemale <- 
-  ggdraw() +
-  draw_plot(g1F)+
-  draw_plot(g2FDash, x = 0.71, y = .8, width = .29, height = .15)+
-  draw_plot(g3Fplot, x = 0.80, y = .715, width = .1, height = .1)
+  cowplot::ggdraw() +
+  cowplot::draw_plot(g1F)+
+  cowplot::draw_plot(g2FDash, x = 0.71, y = .8, width = .29, height = .15)+
+  cowplot::draw_plot(g3Fplot, x = 0.80, y = .715, width = .1, height = .1)
 
 
 ### Same Plot for males
@@ -103,7 +103,7 @@ BayernDataM <- data.frame("Mean"=Bayern$LifeExpStack_Male,
                           "Group"=1)
 
 g2M <- ggplot(BayernDataM, aes(x = Mean, y = Group, fill = stat(x))) +
-  geom_density_ridges_gradient(scale = 3, rel_min_height = 0.001) +
+  ggridges::geom_density_ridges_gradient(scale = 3, rel_min_height = 0.001) +
   scale_fill_gradientn(colours = Mypal)+
   theme_void()+
   theme(legend.position = "bottom",
@@ -111,22 +111,22 @@ g2M <- ggplot(BayernDataM, aes(x = Mean, y = Group, fill = stat(x))) +
         legend.key.width = unit(0.8, 'cm'),
         legend.text=element_text(face = "bold", size=15))
 
-g3M <- get_legend(g2M) #extract the legend 
+g3M <- ggpubr::get_legend(g2M) #extract the legend 
 g2MDash <- g2M+ theme(legend.position = "none") #remove legend
-g3Mplot <- as_ggplot(g3M) #legend as own plot
+g3Mplot <- ggpubr::as_ggplot(g3M) #legend as own plot
 
 
 
 #for single picture, change font size text =3, theme text =15 in g1, 
 #legend text = 10 in g2
 gMale <- ggdraw() +
-  draw_plot(g1M)+
-  draw_plot(g2MDash, x = 0.71, y = .8, width = .29, height = .15)+
-  draw_plot(g3Mplot, x = 0.80, y = .715, width = .1, height = .1) 
+  cowplot::draw_plot(g1M)+
+  cowplot::draw_plot(g2MDash, x = 0.71, y = .8, width = .29, height = .15)+
+  cowplot::draw_plot(g3Mplot, x = 0.80, y = .715, width = .1, height = .1) 
 
 
 x11()
-plot_grid(gFemale, gMale) #save/look at in 16 to 9 for proper format
+cowplot::plot_grid(gFemale, gMale) #save/look at in 16 to 9 for proper format
 
 
 
@@ -188,15 +188,15 @@ gMDiff <- Bayern %>% mutate("DiffM"= cut(DiffExpMale,
         plot.title = element_text(size = 13, face = "bold", hjust=0.5))
 
 #extract legend
-gLeg <- get_legend(gMDiff)
+gLeg <- ggpubr::get_legend(gMDiff)
 gMDiffNoLeg <- gMDiff + theme(legend.position = "none")
 
 
 ### plot both together
-ggdraw() +
-  draw_plot(gFDiff, x = 0.01, y = 0.1, width = 0.45, height = 0.95)+
-  draw_plot(gMDiffNoLeg, x = 0.39, y = .1, width=0.45, height=0.95)+
-  draw_plot(gLeg, x = 0.68, y = 0.1, width = 0.45, height = 0.95)
+cowplot::ggdraw() +
+  cowplot::draw_plot(gFDiff, x = 0.01, y = 0.1, width = 0.45, height = 0.95)+
+  cowplot::draw_plot(gMDiffNoLeg, x = 0.39, y = .1, width=0.45, height=0.95)+
+  cowplot::draw_plot(gLeg, x = 0.68, y = 0.1, width = 0.45, height = 0.95)
 
 
 
@@ -217,7 +217,7 @@ rbind(LifeExpFrameFemaleStacking, #combine males and females
   filter(RegNumber==NumUsed) %>%
   mutate("WUnique"=paste0(Width, substring(Sex,1,1))) %>% #Differentiate Mean Color of men and woman
   ggplot(., aes(group=Sex))+
-  geom_lineribbon(aes(x = Year, y = Mean,lty=Type,fill=WUnique, ymin=PiLo, ymax=PiUp,
+  ggdist::geom_lineribbon(aes(x = Year, y = Mean,lty=Type,fill=WUnique, ymin=PiLo, ymax=PiUp,
                       col=Sex),
                   alpha=0.5,size=0.8)+
   scale_color_manual(values=c("weiblich"="#400040",
