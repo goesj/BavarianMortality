@@ -1,6 +1,6 @@
 # BavarianMortality
 Estimation of regional mortality rates using Bayesian hierarchical models.
-Regional Mortality is forecasted using Bayesian implementation of the APC and RH model extended with the BYM2 prior to model spatial dependencies. 
+Regional Mortality is forecasted using Bayesian implementations of the APC and RH model. They are extended with the BYM2 prior to account for spatial dependencies. Both models are then used within a stacking approach to generate more robust forecasts. 
 
 
 ## Models 
