@@ -1,5 +1,6 @@
-library(shiny); library(RColorBrewer); library(cowplot); library(ggridges);
-library(ggpubr); library(ggplot2); library(tidyverse); library(ggdist)
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(shiny,RColorBrewer,cowplot,
+               ggplot2, tidyverse, ggdist)
 
 ## First load the data and functions needed
 source("../01_Functions.R")
@@ -85,7 +86,7 @@ server <- function(input, output) {
             legend.position = "bottom") 
     
     #adding both
-    plot_grid(g1F, g1M)
+    cowplot::plot_grid(g1F, g1M)
     
     
   })
@@ -131,7 +132,7 @@ server <- function(input, output) {
       filter(RegNumber==input$Region) %>% #Differentiate Mean Color of men and woman
       mutate("WUnique"=paste0(Width, substring(Sex,1,1))) %>%  
       ggplot(data=.)+
-      geom_lineribbon(aes(x = Year, y = Mean,lty=Type, fill=WUnique, ymin=PiLo, ymax=PiUp),
+      ggdist::geom_lineribbon(aes(x = Year, y = Mean,lty=Type, fill=WUnique, ymin=PiLo, ymax=PiUp),
                       col = "#400040",alpha=0.5,size=0.8,group=1)+
       scale_fill_manual(values = c("0.8w"="#e5cce5","0.5w"="#bf7fbf",
                                    "0.8m"="#d1e1ec", "0.5m"="#b3cde0"))+ #values of ribbon (second value is 50%PI)
@@ -150,7 +151,7 @@ server <- function(input, output) {
       filter(RegNumber==input$Region) %>% #Differentiate Mean Color of men and woman
       mutate("WUnique"=paste0(Width, substring(Sex,1,1))) %>%  
       ggplot(data=.)+
-      geom_lineribbon(aes(x = Year, y = Mean,lty=Type, fill=WUnique, ymin=PiLo, ymax=PiUp),
+      ggdist::geom_lineribbon(aes(x = Year, y = Mean,lty=Type, fill=WUnique, ymin=PiLo, ymax=PiUp),
                       col = "#011f4b",alpha=0.5,size=0.8,group=1)+
       scale_fill_manual(values = c("0.8w"="#e5cce5","0.5w"="#bf7fbf",
                                    "0.8m"="#d1e1ec", "0.5m"="#b3cde0"))+ #values of ribbon (second value is 50%PI)
@@ -165,7 +166,7 @@ server <- function(input, output) {
             panel.grid = element_line(colour = "grey92"))
     
     #adding Both
-    plot_grid(PlotF, PlotM)
+    cowplot::plot_grid(PlotF, PlotM)
   })
   
 }
