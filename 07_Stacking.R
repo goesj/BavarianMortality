@@ -13,8 +13,6 @@ DataAPC_BYM2_Stan_1114<- StanData(Data=TotalData,
                                   AdjMatType = 3,
                                   sex="male", #Sex 
                                   ModelType = "APC", #APC or RH
-                                  RegionType = "BYM2", #BYM2 or SAR
-                                  Cohort=TRUE, #Cohort Index True or False 
                                   TFor = 3) #Forecast Horzion 
 
 DataRH_BYM2_Stan_1114 <- StanData(Data=TotalData, 
@@ -22,8 +20,6 @@ DataRH_BYM2_Stan_1114 <- StanData(Data=TotalData,
                                   AdjMatType = 3,
                                   sex="male", #Sex 
                                   ModelType = "RH", #APC or RH
-                                  RegionType = "BYM2", #BYM2 or SAR
-                                  Cohort=TRUE, #Cohort Index True or False 
                                   TFor = 3)
 
 #See Appendix for Parameters of HMC Modelling For each Model
@@ -64,7 +60,7 @@ FCMatStanRH_BYM2_1114<- rstan::extract(StanRH_BYM2_M_1114,
 ModelListStacking <- list(APC_BYM2=FCMatStanAPC_BYM2_1114,
                           RH_BYM2=FCMatStanRH_BYM2_1114)
 
-#Get Out Of Sample Data
+#Get Out Of Sample Data (Test Data)
 DataOOS <- OutOfSampleData(Data = TotalData, Region="Bayern",
                            sex="male", LastYearObs = 2011, h=3)
 
@@ -73,7 +69,7 @@ SWeights1114 <- StackingWeights(ObservedCount = DataOOS$D,
                                 FCMatList = ModelListStacking,
                                 Exposure = DataOOS$ExposureFC)
 
-#Calculate Stacking Matrix (note: )
+#Calculate Stacking Matrix
 # First Create List of Stacking Forecasts to combine (here IN-SAMPLE!!!!)
 InSampleStackingMat <- list(rstan::extract(FCMatStanAPC_BYM2_1114, 
                                            permuted=TRUE, pars="MHat")$Mhat,
