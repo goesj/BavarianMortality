@@ -1,9 +1,3 @@
-### Mort Modelling###
-## Load Libraries
-if (!require("pacman")) install.packages("pacman")
-pacman::p_load(ggpubr)
-
-
 #### Load Data ####
 load("Data/TotalData.RData") #load Data
 ### Load Functions
