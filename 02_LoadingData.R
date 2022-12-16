@@ -61,14 +61,18 @@ DM <- DeathM %>% pivot_longer(., cols = -(1:5),
                               names_to = "AgeGroup", 
                               values_to="Death")
 
-MaleData <- PM %>% mutate("Deaths"=pull(DM[,ncol(DM)])) #add last column to data.frame (Vector of Deaths)
+MaleData <- PM %>% 
+  mutate("Deaths"=pull(DM[,ncol(DM)])) #add last column to data.frame (Vector of Deaths)
 
 
 #Same for Female Data
-PF <- PopulationW %>% pivot_longer(., cols = -(1:5),names_to = "AgeGroup", values_to="Population")
-DF <- DeathW %>% pivot_longer(., cols = -(1:5),names_to = "AgeGroup", values_to="Death")
+PF <- PopulationW %>% 
+  pivot_longer(., cols = -(1:5),names_to = "AgeGroup", values_to="Population")
+DF <- DeathW %>% 
+  pivot_longer(., cols = -(1:5),names_to = "AgeGroup", values_to="Death")
 
-FemaleData <- PF %>% mutate("Deaths"=pull(DF[,ncol(DF)]))
+FemaleData <- PF %>% 
+  mutate("Deaths"=pull(DF[,ncol(DF)]))
 
 #Calculate Exposure
 #Exposure= (N(t)-N(t-1)/log(N(t)/N(t-1))) (see Preston et. al)
