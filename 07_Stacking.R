@@ -1,9 +1,8 @@
-if (!require("pacman")) install.packages("pacman")
-pacman::p_load(rstan)
 #### Load Data ####
 load("Data/TotalData.RData") #load Data
 ### Load Functions
 source("01_Functions.R")
+pacman::p_load(rstan)
 
 ######---- Create Data and run models----#######################################
 #Example of Stacking For males

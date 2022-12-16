@@ -1,5 +1,3 @@
-if (!require("pacman")) install.packages("pacman")
-
 #### Load Data ####
 load("Data/TotalData.RData") #load Data
 ### Load Functions

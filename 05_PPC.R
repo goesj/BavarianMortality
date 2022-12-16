@@ -1,8 +1,3 @@
-### Mort Modelling###
-## Load Libraries
-if (!require("pacman")) install.packages("pacman")
-p_load("bayesplot")
-
 #### Load Data ####
 load("Data/TotalData.RData") #load Data
 ### Load Functions
