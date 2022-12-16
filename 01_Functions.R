@@ -79,7 +79,7 @@ ScalingFacBYM2 <- function(Nodes, AdjMat){
   # Compute the diagonal elements of the covariance matrix subject to the 
   # constraint that the entries of the ICAR sum to zero.
   #See the inla.qinv function help for further details.
-  Q_inv <-  inla.qinv(Q_pert, constr=list(A = matrix(1,1,Nodes$N),e=0))
+  Q_inv <-  INLA::inla.qinv(Q_pert, constr=list(A = matrix(1,1,Nodes$N),e=0))
   
   #Compute the geometric mean of the variances, which are on the diagonal of Q.inv
   scaling_factor <-  exp(mean(log(diag(Q_inv))))
@@ -209,7 +209,7 @@ OutOfSampleData <- function(Data, sex="female", LastYearObs=2016, h=1){
               "ExposureFC"=ExposureFC))
 }
 
-####### 1.2 Functions for Evaluation of Predictions ############################
+####### 1.2 Functions for Model Evaluation #####################################
 #Get Levels of Prediction Intervals
 PIlevel <- function(Percent){
   Percent <- ifelse(Percent>1,Percent/100,Percent)
@@ -256,15 +256,6 @@ CRPSEmp <- function(ObservedCount, FCMat, Exposure){
   return(DSSEmp)
 }
 
-#Empirical CDF
-EmpCDFFun <- function(ObservedCount, FCMat, Exposure){
-  N <- length(ObservedCount)
-  ECDF <- numeric(N)
-  for (i in 1:N) {
-    ECDF[i] <- mean(ppois(ObservedCount[i],exp(FCMat[,i])*Exposure[i]))
-  }
-  return(ECDF)
-}
 
 #Pit Histogram##
 ## Taken from Riebler INLA Group
@@ -338,7 +329,7 @@ pi_accuracy <- function(PIL,PIU, yobs){
 }
 
 
-##Create Data Frame of Forecasts##
+##Create Data Frame with Model Evaluation Score for each Forecast
 FCDataFrame <- function(FCMat,Exposure,PQuant,ObservedCount){ #Function for the forecast dataFrame
   DataFrame <- data.frame("MeanVal"=(apply(FCMat,2, 
                                            function(x) mean (exp(x)))*Exposure),
@@ -364,8 +355,9 @@ transformer <- function(x, values) {
 }
 
 
-############## 1.4. Functions for calcualtion of Stacking Weights##############
+############## 1.3. Functions for calcualtion of Stacking Weights##############
 #Helper Function
+#(See https://mc-stan.org/docs/2_29/stan-users-guide/log-sum-of-exponentials.html 17.4.3)
 log_sum_exp <- function(u) {
   max_u <- max(u);
   a <- 0;
@@ -392,7 +384,6 @@ StackingWeights <- function(ObservedCount, FCMatList, Exposure){
     LoglikeMat(ObservedCount = ObservedCount,FCMat = x,Exposure = Exposure)}
     )
   #Calculation of Mean of Log Like Values 
-  #(See https://mc-stan.org/docs/2_29/stan-users-guide/log-sum-of-exponentials.html 17.4.3)
   lpd <- lapply(LoglikeList,
                 function(x){apply(x,2,log_sum_exp)-log(nrow(x))}
                 ) 
@@ -401,7 +392,8 @@ StackingWeights <- function(ObservedCount, FCMatList, Exposure){
   return(Stacking)
 }
 
-#Function from loo package. slight Change so that results show Names of Models
+#Function from loo package stacking_weights. 
+#slight Change so that results show Names of Models
 StackFun <- function (lpd_point, optim_method = "BFGS", optim_control = list()) {
   stopifnot(is.matrix(lpd_point))
   N <- nrow(lpd_point)
@@ -455,7 +447,7 @@ StackingMat <- function(Weights, FCMatList){
 
 
 
-############## 1.5. Functions for Evaluation of Life Expecancy##################
+############## 1.4. Functions for Evaluation of Life Expecancy##################
 #Get Life Expectancy for each posterior predictive draw
 LifeExpFunIt <- function(FCMat, LastYear=2017, Year=Jahr, 
                          sex="female", OutOfSample=TRUE, hMax=15){
@@ -595,7 +587,7 @@ LifeExpSampleFunction2 <- function(FCMatIn, FCMatOut, PI, sex="female",
   
 }
 
-############## 1.6. Function for Graphics ######################################
+############## 1.5. Function for Graphics ######################################
 #Function for Plotting Geary C
 GearyCPlot <- function(TotalData, LastYearObs,sex){
   #Get InSample Data
