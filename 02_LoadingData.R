@@ -1,15 +1,15 @@
 ## Loading Data ##
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(sf,openxlsx)
+pacman::p_load(sf,openxlsx, tidyverse)
 
 
 ### Regional Data####
-GermanyData <- read_sf(
+GermanyData <- sf::read_sf(
   file.path(getwd(),"Data/Maps/vg250_01-01.tm32.shape.ebenen/vg250_ebenen_0101/VG250_KRS.shp"),
                        as_tibble = FALSE)
 
 #Regionaltype 
-RegionalType <- read.xlsx(
+RegionalType <- openxlsx::read.xlsx(
   file.path(getwd(),"Data/Maps/ge1000.tm32.shape/ge1000/ktyp4_1000/KTYP4_1000_Tabelle.xlsx"),
                         sheet = 1,colNames = TRUE)
 
@@ -30,20 +30,20 @@ Bayern$SN_KTYP4 <- ifelse(Bayern$SN_KTYP4==1,4,
 
 
 ## Population Data
-PopulationM <- read.xlsx(xlsxFile = file.path(getwd(),
+PopulationM <- openxlsx::read.xlsx(xlsxFile = file.path(getwd(),
                                               "Data/BY_12411(Population)_2000-17.xlsx"),
                           sheet = "BevölkerungMännlich", colNames = TRUE)
 
-PopulationW <- read.xlsx(xlsxFile = file.path(getwd(),
+PopulationW <- openxlsx::read.xlsx(xlsxFile = file.path(getwd(),
                                               "Data/BY_12411(Population)_2000-17.xlsx"),
                           sheet = "BevölkerungWeiblich", colNames = TRUE)
 
 
-DeathM <- read.xlsx(xlsxFile = file.path(getwd(),
+DeathM <- openxlsx::read.xlsx(xlsxFile = file.path(getwd(),
                                          "Data/BY_12613(Deaths)_2000-17.xlsx"),
                     sheet = "SterbefälleMännlich", colNames = TRUE)
 
-DeathW <- read.xlsx(xlsxFile = file.path(getwd(),
+DeathW <- openxlsx::read.xlsx(xlsxFile = file.path(getwd(),
                                          "Data/BY_12613(Deaths)_2000-17.xlsx"),
                     sheet = "SterbefälleWeiblich", colNames = TRUE)
 
