@@ -15,7 +15,7 @@ NamesEnglish <- gsub("(Krfr.St)", "City", NamesEnglish) #Change Krfr. St to City
 
 names(RegionList) <- NamesEnglish  
 
-Mypal <- brewer.pal(n = 11, name = "RdBu")#Create own Color Palette
+Mypal <- RColorBrewer::brewer.pal(n = 11, name = "RdBu")#Create own Color Palette
 
 # Define UI ----
 ui <- fluidPage(
