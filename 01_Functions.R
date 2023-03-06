@@ -609,7 +609,7 @@ GearyCPlot <- function(TotalData, LastYearObs,sex){
   
   #Get Neighborhood Structure
   nm.adj <- spdep::poly2nb(Bayern) #Neighborhood List Bayern
-  ListBY <- spdep::nb2listw(nm.adj, style = "W") #Adjacency matrix in List Form
+  ListBY <- spdep::nb2listw(nm.adj, style = "B") #Adjacency matrix in List Form
   
   #Create Result data Frame
   ResDat <- data.frame("Val"=numeric(max(InSampleData$Data$AgeID)*
