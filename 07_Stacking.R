@@ -7,7 +7,7 @@ pacman::p_load(rstan)
 ######---- Create Data and run models----#######################################
 #Example of Stacking For males
 #Calculation of Stacking Weights InSample 2001-2010, FC= 2011-2014
-DataAPC_BYM2_Stan_1114<- StanData(Data=TotalData, 
+DataAPC_BYM2_Stan_1114 <- StanData(Data=TotalData, 
                                   LastYearObs = 2011, #last Year of InSample Data 
                                   AdjMatType = 3,
                                   sex="male", #Sex 
@@ -75,3 +75,24 @@ InSampleStackingMat <- list(rstan::extract(FCMatStanAPC_BYM2_1114,
                             rstan::extract(FCMatStanRH_BYM2_1114, 
                                            permuted=TRUE, pars="MHat")$Mhat) %>% 
   StackingMat(Weights = SWeights1114, FCMatList = .) #combine to one Matrix
+
+
+
+# Calculation of OOS Stacking Matrix #
+OOSStackingMat <- list(FCMatStanAPC_BYM2_1114,
+                       FCMatStanRH_BYM2_1114) %>% 
+  StackingMat(SWeights1114, FCMatList=.)
+
+###### --- Calculate Life Expectancy Quantiles for Stacking Matrix #############
+LifeExpFrameMaleStacking11114 <- 
+  LifeExpSampleFunction2(FCMatIn = InSampleStackingMat, 
+                         FCMatOut = OOSStackingMat, 
+                         PI=c(80,50), sex="male", 
+                         YearsIn = 2001:2011,
+                         YearsOut = 2012:2014,
+                         LastYearIn = 2011)
+
+
+
+
+
