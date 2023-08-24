@@ -30,5 +30,6 @@ StanAPC_BYM2_F <- rstan::stan(file.path(getwd(),"StanCode/APC_BYM2.stan"),
                               chains = 4, iter=4000,warmup=2000, 
                               save_warmup=FALSE, thin=4,
                               control = list(adapt_delta = 0.81))
-save(StanAPC_BYM2_F, 
-     file="../Results/StanAPC_BYM2_F.RData")
+#cannot be uploaded into Git, file too big (1.8 GB)
+save(StanAPC_BYM2_F_1517, 
+     file="../Results/StanAPC_BYM2_F_1517.RData")
