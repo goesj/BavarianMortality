@@ -604,8 +604,17 @@ GearyCPlot <- function(TotalData, LastYearObs,sex){
                               LastYearObs=LastYearObs, 
                               AdjMatType = 1)
   
-  InSampleData$Data <- InSampleData$Data %>% 
-    mutate("NormD" = (Deaths/Exposure)*1000) #Calculate normalized Deaths
+  ConstantRate <- InSampleData$Data %>% 
+    group_by(Jahr.R, AgeID) %>% 
+    reframe("CRate"=sum(Deaths)/sum(Exposure)) #ungrouped dataframe
+  
+  InSampleData$Data <- 
+    InSampleData$Data %>% 
+    arrange(Jahr.R,AgeID) %>% #Arrange by Year, Age to past constant rate
+    mutate("CR"=rep(ConstantRate$CRate, each = 96)) %>%  #paste each element R times
+    mutate("ExCounts"=CR*Exposure) %>% #Expected Death Counts
+    mutate("ZCounts"=(Deaths - ExCounts) / sqrt(ExCounts)) %>% 
+    arrange(Jahr.R, KreisID,AgeID) #original layout
   
   #Get Neighborhood Structure
   nm.adj <- spdep::poly2nb(Bayern) #Neighborhood List Bayern
@@ -625,7 +634,7 @@ GearyCPlot <- function(TotalData, LastYearObs,sex){
                      InSampleData$Data$AgeID == a)
       
       #run geary test and check for spatial association
-      Res <- spdep::geary.test(InSampleData$Data$NormD[Ind], listw = ListBY) 
+      Res <- spdep::geary.test(InSampleData$Data$ZCounts[Ind], listw = ListBY) 
       ResDat$Val[i] <- Res$estimate[1]
       ResDat$Sd[i] <- Res$estimate[3]
       ResDat$pVal[i] <- Res$p.value

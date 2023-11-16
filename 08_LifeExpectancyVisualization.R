@@ -228,11 +228,12 @@ rbind(LifeExpFrameFemaleStacking, #combine males and females
   ylab("Life Expectancy at Birth")+xlab("Year")+
   scale_x_discrete(breaks=c(2001,2010,2020,2030))+
   ggtitle("Life Expectancy Predictions for Bamberg")+
-  theme(legend.position = "none",
-        axis.text = element_text(size = 10), #change size of axis text
-        axis.title = element_text(size=12 , face="bold"), #change size of axis title
+    theme(legend.position = "none",
+        axis.text = element_text(size = 25), #change size of axis text
+        axis.title = element_text(size=25 , face="bold"), #change size of axis title
         panel.grid = element_line(colour = "grey92"),
-        plot.title = element_text(hjust=0.5, size=12, face="bold"))
+        plot.title = element_text(hjust=0.5, size=25, face="bold"),
+        panel.border = element_blank())
 
 
 
