@@ -237,5 +237,3 @@ rbind(LifeExpFrameFemaleStacking, #combine males and females
 
 
 
-
-
