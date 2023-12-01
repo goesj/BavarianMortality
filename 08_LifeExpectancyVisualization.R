@@ -215,10 +215,11 @@ NumUsed <- InSampleData$Data %>%
 rbind(LifeExpFrameFemaleStacking, #combine males and females
       LifeExpFrameMaleStacking) %>% 
   filter(RegNumber==NumUsed) %>%
-  mutate("WUnique"=paste0(Width, substring(Sex,1,1))) %>% #Differentiate Mean Color of men and woman
+  #Differentiate Mean Color of men and woman
+  mutate("WUnique"=paste0(Width, substring(Sex,1,1))) %>% 
   ggplot(., aes(group=Sex))+
-  ggdist::geom_lineribbon(aes(x = Year, y = Mean,lty=Type,fill=WUnique, ymin=PiLo, ymax=PiUp,
-                      col=Sex),
+  ggdist::geom_lineribbon(aes(x = Year, y = Mean,lty=Type, 
+                              fill=WUnique, ymin=PiLo, ymax=PiUp,col=Sex),
                   alpha=0.5,size=0.8)+
   scale_color_manual(values=c("weiblich"="#400040",
                               "männlich"="#011f4b"))+
