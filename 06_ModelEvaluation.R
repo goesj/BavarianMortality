@@ -61,8 +61,8 @@ TotFCDatFrame %>% group_by(ModelName) %>% #group_by Model
             "MeanRPS"=mean(RPSEmp),
             "MAE"=mean(abs(D-MeanVal)),
             "RMSE"=sqrt(mean((D-MeanVal)^2)), #Root Mean Squared Error
-            "Coverage"=pi_accuracy(PIL=PIL_mid,
-                                   PIU=PIU_mid, yobs=D)$Success)
+            "Coverage"=pi_accuracy(PIL=PICoherent.1,
+                                   PIU=PICoherent.2, yobs=D)$Success)
 
 
 
