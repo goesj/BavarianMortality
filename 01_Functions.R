@@ -311,17 +311,68 @@ PIFunctionO1 <- function(FCMat,ExposureFC,prob=0.025){
   return(Drawvec)
 }
 
-# Function for Calculation of Mid Prediction Interval
-PIFunctionO1_mid <- function(FCMat,ExposureFC,prob=0.025){
-  Drawvec <- numeric(ncol(FCMat))
-  for (r in 1:ncol(FCMat)) {
-    #Calculation of midquantile
-    Drawvec[r] <- Qtools::midquantile(
-      rpois(n=nrow(FCMat), lambda = exp(FCMat[,r])*ExposureFC[r]),probs=prob
-      )$y 
+PIFunctionCoherent <- function(FCMat, ExposureFC, PI){
+  
+  #Create Matrix for final PI's
+  PIMatFinal <- matrix(0, nrow = ncol(FCMat),
+                       ncol = 2)
+  
+  for(r in 1:ncol(FCMat)){ #loop over all forecasts
+    
+    #coherent PI's as described by Homburg et. al (2021)
+    #Get Poisson Draws
+    PoiDraws <- rpois(n=nrow(FCMat),
+                      lambda = exp(FCMat[,r])*ExposureFC[r])
+    
+    #1.) First Compute the larges Integer L in N s.t. calculate P(X<L)>=1-Cov
+    UniqueValues <- 0:max(PoiDraws) #Get entire Sample Range 
+    
+    #calculate P(X<L)
+    ProbVals <- sapply(UniqueValues,function(x) mean(PoiDraws < x)) #Calculate probability
+    
+    #Find integer L (here L is integer not position in vector)
+    L <- UniqueValues[sum(ProbVals<=(1-PI))] #largest integer for which this holds
+    
+    #2.) Calculate L+1 PI's 
+    PIMat <- matrix(data = 0,nrow = L+1,ncol = 4,
+                    dimnames = list(0:L,
+                                    c("Lower","Upper","Coverage","Width")))
+    
+    #for l = 0,..,L compute the smallest u s.t. P(l <= X <= u)>= Cov
+    ProbValsUpper <- sapply(UniqueValues, function(z) mean(PoiDraws <= z))
+    
+    #3. for each l find a minumum u
+    for(i in 1:(L+1)){ #L+1 PI's 
+      
+      l <- i-1 #starting with l = 0, i is helper index
+      
+      PIMat[i,1] <- l #set l as lower bound 
+      
+      uVec <- L:max(PoiDraws) #possible values of u
+      #find upper bound of u in L,...,max(Y)
+      #P(X in [Xu,Xl]) = P(X <= Xu)- P(X < Xl)
+      upperBound <- which(
+        sapply(uVec, #Find u in L,...,max(Y) 
+               function(y) (ProbValsUpper[y+1]-ProbVals[i]))>=
+          PI) %>% min()
+      
+      PIMat[i,2] <- uVec[upperBound] #upper Bound (Integer)
+      
+      #Coverage P(X in Xu,Xl) = P(X <= Xu)- P(X < Xl)
+      #plus 1 since upper bound is integer and not position in vector
+      PIMat[i,3] <- ProbValsUpper[PIMat[i,2]+1]-  ProbVals[i]
+      
+      PIMat[i,4] <- PIMat[i,2]-PIMat[i,1] #Width
+    }
+    
+    #4) chose PI of smallest Width, then choose the one with greatest Coverage
+    PIMatFinal[r,] <- PIMat %>% data.frame() %>% 
+      arrange(Width, desc(Coverage)) %>% #smallest Width and greatest Coverage
+      slice(1) %>% select(1:2) %>% as.numeric() #Get values in final Matrix
   }
-  return(Drawvec)
+  return(PIMatFinal)
 }
+
 
 #Coverage 
 pi_accuracy <- function(PIL,PIU, yobs){
@@ -345,12 +396,9 @@ FCDataFrame <- function(FCMat,Exposure,PQuant,ObservedCount){ #Function for the 
                           "logScore"=logScore(ObservedCount,FCMat,Exposure),
                           "DSS"=DssScore(ObservedCount, FCMat, Exposure),
                           "RPSEmp"=CRPSEmp(ObservedCount,FCMat, Exposure),
-                          "PIL_mid"=PIFunctionO1_mid(FCMat, 
-                                                     ExposureFC = Exposure, 
-                                                     prob=PQuant$Lo),
-                          "PIU_mid"=PIFunctionO1_mid(FCMat, 
-                                                     ExposureFC = Exposure, 
-                                                     prob=PQuant$Up),
+                          "PICoherent" = PIFunctionCoherent(FCMat,
+                                                            ExposureFC = Exposure,
+                                                            PI = 0.8),
                           "Obs"=1:ncol(FCMat))
   return(DataFrame)
 }
@@ -680,5 +728,134 @@ YRepDensity <- function(Draws, Deaths, sex){
                       ncol=2,
                       nrow=2)
   )
+}
+
+######### 1.6. PI Functions for OOS ############################################
+#Adjusted PI Functions, where "external" Draws (i.e. Deaths) are used as input
+# to calculate Prediction intervals
+PIFunction01_Ext <- function(PoiDraws,prob=0.025){
+  Drawvec <-  numeric(ncol(PoiDraws)) 
+  for (r in 1:ncol(PoiDraws)) {
+    Drawvec[r] <- PoiDraws[,r] %>% 
+      quantile(probs=prob)
+  }
+  return(Drawvec)
+}
+
+#Function for calculation of Mid-quantiles
+PIFunction_Mid_Ext <- function(PoiDraws,prob=0.025){
+  Drawvec <- numeric(ncol(PoiDraws))
+  for (r in 1:ncol(PoiDraws)) {
+    Drawvec[r] <- Qtools::midquantile(PoiDraws[,r],
+                                      probs=prob)$y #Calculation of midquantile
+  }
+  return(Drawvec)
+}
+
+#Adjusted PI Function that runs faster. Takes less time for simulation study
+PIFunctionCoherent_Ext <- function(PoiDraws, PI){
+  
+  #Create Matrix for final PI's
+  PIMatFinal <- matrix(0, nrow = ncol(PoiDraws),
+                       ncol = 2)
+  
+  for(r in 1:ncol(PoiDraws)){ #loop over all forecasts
+    
+    #coherent PI's as described by Homburg et. al (2021)
+    #Get Poisson Draws
+    
+    #1.) First Compute the larges Integer L in N s.t. calculate P(X<L)>=1-Cov
+    UniqueValues <- 0:max(PoiDraws[,r]) #Get entire Sample Range 
+    
+    #calculate P(X<L) 
+    ProbVals <- sapply(UniqueValues,function(x) mean(PoiDraws[,r] < x))
+    
+    #Find integer L (here L is integer not position in vector)
+    L <- UniqueValues[sum(ProbVals<=(1-PI))] #largest integer for which this holds
+    
+    #2.) Calculate L+1 PI's 
+    PIMat <- matrix(data = 0,nrow = L+1,ncol = 4,
+                    dimnames = list(0:L,
+                                    c("Lower","Upper","Coverage","Width")))
+    
+    #for l = 0,..,L compute the smallest u s.t. P(l <= X <= u)>= Cov
+    ProbValsUpper <- sapply(UniqueValues, function(z) mean(PoiDraws[,r] <= z))
+    
+    #Check if multiple low values (0,..,) have probability mass of 0
+    #saves compuation time since entire loop does not have to be evaluated
+    if(!all(ProbValsUpper>0)){ 
+      #If lambda is large, multiple values from 0 onward will have a mass of zero
+      LastValZero <- max(which(ProbValsUpper<=0)) #Last Values of Zero in Vector
+      
+      PIMat[1:(LastValZero),1] <- 0:(LastValZero-1) #includes the zero, hence -1
+      
+      uVec <- L:max(PoiDraws[,r]) #possible values of u
+      
+      upperBound <- which(
+        sapply(uVec, #Find u in L,...,max(Y) 
+               function(y) (ProbValsUpper[y+1]-ProbVals[1]))>=
+          PI) %>% min()
+      
+      PIMat[1:(LastValZero),2] <- uVec[upperBound]
+      PIMat[1:(LastValZero),3] <- ProbValsUpper[uVec[upperBound] + 1] -
+        ProbVals[1]
+      
+      for(i in (LastValZero+1):(L+1)){ 
+        # over all PI's 
+        
+        l <- i-1 #helper Index for Bound
+        
+        PIMat[i,1] <- l #set l as lower bound 
+        
+        uVec <- L:max(PoiDraws[,r]) #possible values of u
+        #find upper bound of u in L,...,max(Y)
+        #P(X in [Xu,Xl]) = P(X <= Xu)- P(X < Xl)
+        upperBound <- which(
+          sapply(uVec, #Find u in L,...,max(Y) 
+                 function(y) (ProbValsUpper[y+1]-ProbVals[i]))>=
+            PI) %>% min()
+        
+        PIMat[i,2] <- uVec[upperBound] #upper Bound (Integer)
+        
+        #Coverage P(X in Xu,Xl) = P(X <= Xu)- P(X < Xl)
+        #plus 1 since upper bound is integer and not position in vector
+        PIMat[i,3] <- ProbValsUpper[PIMat[i,2]+1]-  ProbVals[i]
+        
+        #PIMat[i,4] <- PIMat[i,2]-PIMat[i,1] #Width
+      }
+    } else { #do normal loop
+      #3. for each l find a minumum u
+      for(i in 1:(L+1)){ 
+        # over all PI's 
+        
+        l <- i-1 #starting with l = 0, i is helper index
+        
+        PIMat[i,1] <- l #set l as lower bound 
+        
+        uVec <- L:max(PoiDraws[,r]) #possible values of u
+        #find upper bound of u in L,...,max(Y)
+        #P(X in [Xu,Xl]) = P(X <= Xu)- P(X < Xl)
+        upperBound <- which(
+          sapply(uVec, #Find u in L,...,max(Y) 
+                 function(y) (ProbValsUpper[y+1]-ProbVals[i]))>=
+            PI) %>% min()
+        
+        PIMat[i,2] <- uVec[upperBound] #upper Bound (Integer)
+        
+        #Coverage P(X in Xu,Xl) = P(X <= Xu)- P(X < Xl)
+        #plus 1 since upper bound is integer and not position in vector
+        PIMat[i,3] <- ProbValsUpper[PIMat[i,2]+1]-  ProbVals[i]
+        
+        #PIMat[i,4] <- PIMat[i,2]-PIMat[i,1] #Width
+      } 
+    } 
+    PIMat[,4] <- PIMat[,2]-PIMat[,1]
+    
+    #4) chose PI of smallest Width, then choose the one with greatest Coverage
+    PIMatFinal[r,] <- PIMat %>% data.frame() %>% 
+      arrange(Width, desc(Coverage)) %>% #smallest Width and greatest Coverage
+      slice(1) %>% select(1:2) %>% as.numeric() #Get values in final Matrix
+  }
+  return(PIMatFinal)
 }
 
