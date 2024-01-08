@@ -2,7 +2,7 @@
 ## Load Libraries
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(rstan)
-# if your having trouble installin rstan see
+# if youre having trouble installing rstan see
 #https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started
 
 #### Load Data ####
