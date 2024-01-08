@@ -157,7 +157,7 @@ model {
   // Append Forecasted Cohort Index on Existing Index
   gamma_cohort_final = append_row(gamma_cohort, gamma_cohort_pred);
   
-  // Forecast Log Mortality Rates (attention may be slow due to if statement in loop)
+  // Forecast Log Mortality Rates
   for (t in 1:TFor) for (r in 1:R) for (a in 1:A)  {
     if(a != 1 ){
       K = M*((A-1)-(a-1))+(T+t);  
