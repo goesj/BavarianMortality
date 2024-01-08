@@ -1,7 +1,7 @@
 ## FILE FOR VISUALISATION OF RESULTS############################################
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(ggplot2,RColorBrewer, cowplot, ggdist,
-               ggridges, ggpubr)
+               ggridges, ggpubr, ggrepel)
 
 
 ### Load Functions
@@ -16,6 +16,18 @@ load("Data/LifeExpFrameStacking.RData")
 ##### 1) Plot Mean LE Estimates for all Regions in 2017 in Map #################
 ################################################################################
 InSampleData <- TrainingDataFun(TotalData, sex="male",LastYearObs = 2017)
+
+#Create Data Frame of Cities, to plot Information where they are situated
+CitiesData <-
+  Bayern %>% filter(
+    GEN %in% c("München", "Regensburg", "Bamberg", "Nürnberg", "Augsburg") &
+    BEZ == "Kreisfreie Stadt" #City States
+  ) %>% 
+  mutate("City" = c("Munich", "Regensburg", "Bamberg", "Nuremberg", "Augsburg")) %>% 
+  st_centroid(.) %>% #Get middle point of Area (for Plotting text)
+  extract(geometry, into = c('Lat', 'Lon'), '\\((.*),(.*)\\)', conv = TRUE)
+
+
 
 #Save Results in Bavarian Data Frame
 Bayern$LifeExpStack_Female<- LifeExpFrameFemaleStacking %>% 
@@ -48,6 +60,11 @@ g1F <- ggplot(data = Bayern) +
   geom_sf_text(aes(label=RankLifeExpF, 
                    color=LifeExpStack_Female <83 | LifeExpStack_Female > 84.5 ),
                fontface=2, size=4.5)+
+  #geom_sf_text(data = CitiesData, aes(label = City))
+  geom_text_repel(data = CitiesData, aes(x = Lat, y = Lon, label = City),
+                  fontface = "bold",segment.size = 1,segment.alpha = 0.5,
+                  nudge_x = c(130000,100000,-110000,-120000,-100000),
+                  nudge_y = c(-5000,50000,30000,-20000,20000))+
   scale_color_manual(guide = FALSE, values = c("black", "white"))+ 
   scale_fill_gradientn(colors=Mypal)+
   ggtitle("a. Female Life Expectancy")+
@@ -58,7 +75,7 @@ g1F <- ggplot(data = Bayern) +
 # Crarte Kernel Density Estimate of LE
 BayernData <- data.frame("Mean"=Bayern$LifeExpStack_Female,
                          "Group"=1)
-g2F <- ggplot(BayernData, aes(x = Mean, y = Group, fill = stat(x))) +
+g2F <- ggplot(BayernData, aes(x = Mean, y = Group, fill = after_stat(x))) +
   ggridges::geom_density_ridges_gradient(scale = 3, rel_min_height = 0.001) +
   scale_fill_gradientn(colours = Mypal)+
   theme_void()+
@@ -102,7 +119,7 @@ g1M <- ggplot(data = Bayern) +
 BayernDataM <- data.frame("Mean"=Bayern$LifeExpStack_Male,
                           "Group"=1)
 
-g2M <- ggplot(BayernDataM, aes(x = Mean, y = Group, fill = stat(x))) +
+g2M <- ggplot(BayernDataM, aes(x = Mean, y = Group, fill = after_stat(x))) +
   ggridges::geom_density_ridges_gradient(scale = 3, rel_min_height = 0.001) +
   scale_fill_gradientn(colours = Mypal)+
   theme_void()+
