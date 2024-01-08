@@ -25,7 +25,7 @@ CitiesData <-
   ) %>% 
   mutate("City" = c("Munich", "Regensburg", "Bamberg", "Nuremberg", "Augsburg")) %>% 
   st_centroid(.) %>% #Get middle point of Area (for Plotting text)
-  extract(geometry, into = c('Lat', 'Lon'), '\\((.*),(.*)\\)', conv = TRUE)
+  tidyr::extract(geometry, into = c('Lat', 'Lon'), '\\((.*),(.*)\\)', conv = TRUE)
 
 
 
@@ -60,7 +60,6 @@ g1F <- ggplot(data = Bayern) +
   geom_sf_text(aes(label=RankLifeExpF, 
                    color=LifeExpStack_Female <83 | LifeExpStack_Female > 84.5 ),
                fontface=2, size=4.5)+
-  #geom_sf_text(data = CitiesData, aes(label = City))
   geom_text_repel(data = CitiesData, aes(x = Lat, y = Lon, label = City),
                   fontface = "bold",segment.size = 1,segment.alpha = 0.5,
                   nudge_x = c(130000,100000,-110000,-120000,-100000),
