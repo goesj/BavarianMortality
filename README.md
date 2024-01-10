@@ -34,7 +34,9 @@ The analysis part needs the following packages (in addition to the above ones)
 `spdep`, `Qtools`, `scoringRules`, `MortCast`, `future.apply`
 
 The visualizations part needs 
-`RColorBrewer`, `cowplot`, `ggdist`, `ggridges`; `ggpubr`
+`RColorBrewer`, `cowplot`, `ggdist`, `ggridges`, `ggpubr`,`ggrepel`
 
 ## Shiny App
-A shiny app for better visualization of all results can be found in the `ShinyApp` folder. For it to run it needs access to the data in the `Data` folder.
+A shiny app for better visualization of all results can be found in the `ShinyApp` folder. 
+To run the shiny app, simply open the `RunShiny.R` file and run the entire code. Note, that the app needs access to the `Data`folder. 
+
