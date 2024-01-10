@@ -236,7 +236,7 @@ rbind(LifeExpFrameFemaleStacking, #combine males and females
   ggplot(., aes(group=Sex))+
   ggdist::geom_lineribbon(aes(x = Year, y = Mean,lty=Type, 
                               fill=WUnique, ymin=PiLo, ymax=PiUp,col=Sex),
-                  alpha=0.5,size=0.8)+
+                  alpha=0.5,linewidth=0.8)+
   scale_color_manual(values=c("weiblich"="#400040",
                               "männlich"="#011f4b"))+
   scale_fill_manual(values = c("0.8w"="#e5cce5","0.5w"="#bf7fbf",

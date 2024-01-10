@@ -133,7 +133,7 @@ server <- function(input, output) {
       mutate("WUnique"=paste0(Width, substring(Sex,1,1))) %>%  
       ggplot(data=.)+
       ggdist::geom_lineribbon(aes(x = Year, y = Mean,lty=Type, fill=WUnique, ymin=PiLo, ymax=PiUp),
-                      col = "#400040",alpha=0.5,size=0.8,group=1)+
+                      col = "#400040",alpha=0.5,linewidth=0.8,group=1)+
       scale_fill_manual(values = c("0.8w"="#e5cce5","0.5w"="#bf7fbf",
                                    "0.8m"="#d1e1ec", "0.5m"="#b3cde0"))+ #values of ribbon (second value is 50%PI)
       geom_vline(xintercept = as.character(input$Year), lty = 4)+
@@ -152,7 +152,7 @@ server <- function(input, output) {
       mutate("WUnique"=paste0(Width, substring(Sex,1,1))) %>%  
       ggplot(data=.)+
       ggdist::geom_lineribbon(aes(x = Year, y = Mean,lty=Type, fill=WUnique, ymin=PiLo, ymax=PiUp),
-                      col = "#011f4b",alpha=0.5,size=0.8,group=1)+
+                      col = "#011f4b",alpha=0.5,linewidth=0.8,group=1)+
       scale_fill_manual(values = c("0.8w"="#e5cce5","0.5w"="#bf7fbf",
                                    "0.8m"="#d1e1ec", "0.5m"="#b3cde0"))+ #values of ribbon (second value is 50%PI)
       geom_vline(xintercept = as.character(input$Year), lty = 4)+
