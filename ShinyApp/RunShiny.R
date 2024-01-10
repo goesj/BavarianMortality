@@ -1,5 +1,5 @@
 if (!require("pacman")) install.packages("pacman")
-pacman::pload(shiny)
+pacman::p_load(shiny)
 runApp(appDir = file.path(getwd(),"ShinyApp/app.R"))
 
 
