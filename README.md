@@ -7,7 +7,7 @@ Regional Mortality is forecasted using Bayesian implementations of the APC and R
 There are a collection of Bayesian hierarchical models found in `StanCode` that were used for the analysis. 
 Deaths are modelled using a poisson likelihood where the death rate is scaled to person-years of exposure. 
 
-The models are fitted using **Stan** 
+The models are fitted using **Stan**. Information on how to install Stan can be found below.  
 
 ## Data 
 Within the `Data` folder the following can be found: Deaths and Population data by Age, Sex, Time and Region which was downloaded from <https://www.statistikdaten.bayern.de/genesis/online/logon.> the database of the Bavarian statistical institute. 
@@ -35,6 +35,9 @@ The analysis part needs the following packages (in addition to the above ones)
 
 The visualizations part needs 
 `RColorBrewer`, `cowplot`, `ggdist`, `ggridges`, `ggpubr`,`ggrepel`
+
+For **Stan** to run on the computer, one needs an interface to R called `rstan`. To install `rstan`see the following link: <https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started> 
+Moreover, the package `INLA` is not available on CRAN. Information regarding the installation of `INLA` can be found here: <https://www.r-inla.org/download-install>
 
 ## Shiny App
 A shiny app for better visualization of all results can be found in the `ShinyApp` folder. 
