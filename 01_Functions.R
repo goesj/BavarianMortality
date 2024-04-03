@@ -96,7 +96,7 @@ CohortIndex <- function(agegroup, time, maxAge, M){
 }
 
 #Generation of Training Data
-TrainingDataFun <- function(Data,sex,LastYearObs, AdjMatType=3){
+TrainingDataFun <- function(Data, sex, LastYearObs){
   
   #Filter Year >2000, since 2000 does not have values for exposure
   Data <- Data %>% filter(Year > 2000)
@@ -126,22 +126,16 @@ TrainingDataFun <- function(Data,sex,LastYearObs, AdjMatType=3){
   Nodes <- CARData4Stan(NeighborhoodMatrix = AdjMatBayern) 
   #scaling Factor BYM2 Model
   scalingFac <- ScalingFacBYM2(Nodes = Nodes, AdjMat = AdjMatBayern) 
-    
-  #Adjacency Matrix for SAR Model (currently not in use)
-  AdjMatSAR <- AdjMatFun(AdjMat=AdjMatBayern, 
-                         type=AdjMatType, 
-                         TypeVek= Bayern$SN_KTYP4)
-    
- 
+
   
   return(list(Data=Data, #Data
               Nodes=Nodes, #BYM2 /ICAR
-              scalingFac=scalingFac, #BYM2
-              AdjMat=AdjMatSAR)) #SAR
+              scalingFac=scalingFac #BYM2
+              )) 
 }
 
 #Function for Gerneration of Data as Input for Stan Models
-StanData <- function(Data, LastYearObs=2016,sex,AdjMatType=3, 
+StanData <- function(Data, LastYearObs=2016, sex, 
                      ModelType, RegionType="BYM2", Cohort=TRUE, TFor=1){
   #Get actual Data
   DataInput <- TrainingDataFun(Data=Data, 
@@ -150,7 +144,7 @@ StanData <- function(Data, LastYearObs=2016,sex,AdjMatType=3,
   
   #Basics
   DataOut <- list("T"=max(DataInput$Data$YearID),"A"=max(DataInput$Data$AgeID),
-                "R"=max(DataInput$Data$KreisID),"y"=DataInput$Data$Deaths,
+                "R"=max(DataInput$Data$KreisID), "y"=DataInput$Data$Deaths,
                 "E"=DataInput$Data$Exposure,
                 "TFor"=TFor)
   
@@ -169,26 +163,22 @@ StanData <- function(Data, LastYearObs=2016,sex,AdjMatType=3,
     DataOut <- append(DataOut,
                       list("M"=5))
   }
-  #Check for Regional Type (BYM2, SAR)
+  #Check for Regional Type (BYM2)
   if(RegionType=="BYM2"){
     DataOut <- append(DataOut,
                       list("N_edges"=DataInput$Nodes$N_edges,
                            "node1"=DataInput$Nodes$node1, 
                            "node2"=DataInput$Nodes$node2,
                            "scaling_factor"=DataInput$scalingFac))
-  } else if(RegionType=="SAR"){
-    DataOut <- append(DataOut,
-                      list("W"=DataInput$AdjMat$RowStandMat,
-                           "eigenWsar"=eigen(DataInput$AdjMat$RowStandMat)$values))
-  }
+  } 
   return(DataOut)
 }
 
 
 ### Creation of Out of Sample Data
-OutOfSampleData <- function(Data, sex="female", LastYearObs=2016, h=1){
+OutOfSampleData <- function(Data, sex="female", LastYearObs=2016, TFor=1){
   
-  LastYearTest <- LastYearObs+h #Last Year of Test Data
+  LastYearTest <- LastYearObs+TFor #Last Year of Test Data
   
   #Filter OOS Data
   FCSubset <- Data %>% filter(Year>LastYearObs & 
@@ -389,17 +379,18 @@ pi_accuracy <- function(PIL,PIU, yobs){
 }
 
 
-##Create Data Frame with Model Evaluation Score for each Forecast
+##Create Data Frame with Model Evalution Score for each Forecast.
+# For each Forecast (only on test Data) multiple score are calculated  
 FCDataFrame <- function(FCMat,Exposure,PQuant,ObservedCount){ #Function for the forecast dataFrame
-  DataFrame <- data.frame("MeanVal"=(apply(FCMat,2, 
+  DataFrame <- data.frame("MeanVal"=(apply(FCMat,2, #Mean Forecasts
                                            function(x) mean (exp(x)))*Exposure),
-                          "logScore"=logScore(ObservedCount,FCMat,Exposure),
-                          "DSS"=DssScore(ObservedCount, FCMat, Exposure),
-                          "RPSEmp"=CRPSEmp(ObservedCount,FCMat, Exposure),
-                          "PICoherent" = PIFunctionCoherent(FCMat,
+                          "logScore"=logScore(ObservedCount,FCMat,Exposure), #Log Score 
+                          "DSS"=DssScore(ObservedCount, FCMat, Exposure), #DSS Score
+                          "RPSEmp"=CRPSEmp(ObservedCount,FCMat, Exposure), #RPS Score
+                          "PICoherent" = PIFunctionCoherent(FCMat,         #PI's
                                                             ExposureFC = Exposure,
                                                             PI = 0.8),
-                          "Obs"=1:ncol(FCMat))
+                          "Obs"=1:ncol(FCMat)) #Observation Index
   return(DataFrame)
 }
 
@@ -511,18 +502,18 @@ LifeExpFunIt <- function(FCMat, LastYear=2017, Year=Jahr,
   
   #Creation of Empty Life Expectancy Matrix
   LifeExpMat <- matrix(0, nrow = 1000, #iterations
-                       ncol=96, 
+                       ncol= 96, #Regions
                        dimnames = list("It"=1:1000,
                                        "Reg"=unique(InSampleData$Data$RegionName)))
   if(OutOfSample==TRUE){
-    #Number of Effects
+    #Index Helper to find Rows in Matrix
     IndexHelper <- expand.grid("Age"=unique(InSampleData$Data$AgeID),
                                "Region"=unique(InSampleData$Data$RegionName), 
                                "Year"=(LastYear+1):(LastYear+hMax)) 
     
-    FCMat <- exp(FCMat) #Exponate Out of Sample FC to get actual rates
+    FCMat <- exp(FCMat) #exp out of Sample FC to get actual rates
   } else { #InSample Fit
-    #Number of Effects
+    #Index Helper to find Rows in Matrix 
     IndexHelper <- expand.grid("Age"=unique(InSampleData$Data$AgeID), 
                                "Region"=unique(InSampleData$Data$RegionName),
                                "Year"=unique(InSampleData$Data$Year))
