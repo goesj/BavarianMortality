@@ -8,13 +8,13 @@ source("01_Functions.R")
 load(file="../Results/StanAPC_BYM2_F.RData")
 #Get Out of Sample Data (Test Data)
 DataOOS <- OutOfSampleData(Data = TotalData,sex="female", 
-                           LastYearObs = 2014, h=3)
+                           LastYearObs = 2014, TFor =3)
 
-#Get Samples from Posterior
+#Get Samples of all parameters from posterior
 StanFit_APC_BYM2 <- rstan::extract(StanAPC_BYM2_F, inc_warmup=FALSE)
 
 #Get 1000 Draws of predicted mortality rates
-FCMatStanAPC_BYM2 <- StanFit_APC_BYM2$mufor[1:1000,]
+FCMatStanAPC_BYM2 <- StanFit_APC_BYM2$mufor[1:1000,] #OOS Sample log rates
 
 ##Create PIT plot (see Appendix)
 FY <- EmpCDFFun(ObservedCount = DataOOS$D, 
@@ -38,7 +38,7 @@ PQuant <- PIlevel(80) #80% Quantil for coverage
 #Create list with Models to be evaluated (may be extended with multiple models)
 ModelList <- list(APC_BYM2 = FCMatStanAPC_BYM2)
 
-#Estimate Scores and Measures with FCDataFrame function
+#Estimate Scores and Measures with FCDataFrame function for each forecasted observation
 TotFCDatFrame <- ModelList %>% 
   lapply(., function(x) FCDataFrame(x, Exposure = DataOOS$ExposureFC,
                                     ObservedCount = DataOOS$D, PQuant=PQuant)) %>% 
@@ -54,7 +54,7 @@ TotFCDatFrame <- TotFCDatFrame %>%
          "D"=rep(DataOOS$FCSubset$Deaths,length(unique(ModelName))), #Deaths
          "Jahr"=rep(DataOOS$FCSubset$Year, length(unique(ModelName)))) #Year
 
-#Model Evaluation
+#Model Evaluation. Calculation of mean scores of all OOS observations
 TotFCDatFrame %>% group_by(ModelName) %>% #group_by Model
   summarise("MeanLog"=mean(logScore), #calculate mean scores
             "MeanDSS"=mean(DSS),
