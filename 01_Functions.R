@@ -139,8 +139,8 @@ StanData <- function(Data, LastYearObs=2016, sex,
                      ModelType, RegionType="BYM2", Cohort=TRUE, TFor=1){
   #Get actual Data
   DataInput <- TrainingDataFun(Data=Data, 
-                           AdjMatType=AdjMatType, 
-                           LastYearObs=LastYearObs, sex=sex)
+                               LastYearObs=LastYearObs, 
+                               sex=sex)
   
   #Basics
   DataOut <- list("T"=max(DataInput$Data$YearID),"A"=max(DataInput$Data$AgeID),
