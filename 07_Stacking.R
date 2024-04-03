@@ -46,16 +46,16 @@ save(StanRH_BYM2_M_1114,
 load(file="../Results/StanAPC_BYM2_M_1114.RData")
 load(file="../Results/StanRH_BYM2_M_1114.RData")
 
-#Get Forecastes Mortality Rates
-FCMatStanAPC_BYM2_1114<- rstan::extract(StanAPC_BYM2_M_1114, 
-                                        permuted=TRUE, pars="mufor")$mufor
-FCMatStanRH_BYM2_1114<- rstan::extract(StanRH_BYM2_M_1114, 
-                                       permuted=TRUE, pars="mufor")$mufor
+#Get Parameter estimates of Stan Object
+StanFit_APC_BYM2_1114 <- rstan::extract(StanAPC_BYM2_M_1114)
+StanFit_RH_BYM2_1114 <- rstan::extract(StanRH_BYM2_M_1114)
 
-### Calculate Stacking Weights ##
-#Create Model List
-ModelListStacking <- list(APC_BYM2=FCMatStanAPC_BYM2_1114,
-                          RH_BYM2=FCMatStanRH_BYM2_1114)
+
+
+##### Calculation of  Stacking Weights ########################################
+#Create Model List using Out-of-sample forecasts 
+ModelListStacking <- list(APC_BYM2=StanFit_APC_BYM2_1114$mufor,
+                          RH_BYM2=StanFit_RH_BYM2_1114$mufor)
 
 #Get Out Of Sample Data (Test Data)
 DataOOS <- OutOfSampleData(Data = TotalData, 
@@ -66,19 +66,21 @@ SWeights1114 <- StackingWeights(ObservedCount = DataOOS$D,
                                 FCMatList = ModelListStacking,
                                 Exposure = DataOOS$ExposureFC)
 
-#Calculate Stacking Matrix
+##### Create In Sample and Out Of Sample Stacking Matrix for LE estimates ######
+#Calculate Stacking Matrix (stack forecasts of muliple models)
+
 # First Create List of Stacking Forecasts to combine (here IN-SAMPLE!!!!)
-InSampleStackingMat <- list(rstan::extract(FCMatStanAPC_BYM2_1114, 
-                                           permuted=TRUE, pars="MHat")$Mhat,
-                            rstan::extract(FCMatStanRH_BYM2_1114, 
-                                           permuted=TRUE, pars="MHat")$Mhat) %>% 
+#Note, that Mhat denote the In-Sample predicted rates
+# mufor are the out-of-sample predicted rates 
+InSampleStackingMat <- list(StanFit_APC_BYM2_1114$Mhat, 
+                            StanFit_RH_BYM2_1114$Mhat) %>% 
   StackingMat(Weights = SWeights1114, FCMatList = .) #combine to one Matrix
 
 
 
-# Calculation of OOS Stacking Matrix #
-OOSStackingMat <- list(FCMatStanAPC_BYM2_1114,
-                       FCMatStanRH_BYM2_1114) %>% 
+# Calculation of Out of Sample Stacking Matrix #
+OOSStackingMat <- list(StanFit_APC_BYM2_1114$mufor,
+                       StanFit_RH_BYM2_1114$mufor) %>% 
   StackingMat(SWeights1114, FCMatList=.)
 
 ###### --- Calculate Life Expectancy Quantiles for Stacking Matrix #############
