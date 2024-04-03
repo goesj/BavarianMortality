@@ -9,14 +9,12 @@ pacman::p_load(rstan)
 #Calculation of Stacking Weights InSample 2001-2010, FC= 2011-2014
 DataAPC_BYM2_Stan_1114 <- StanData(Data=TotalData, 
                                   LastYearObs = 2011, #last Year of InSample Data 
-                                  AdjMatType = 3,
                                   sex="male", #Sex 
                                   ModelType = "APC", #APC or RH
                                   TFor = 3) #Forecast Horzion 
 
 DataRH_BYM2_Stan_1114 <- StanData(Data=TotalData, 
                                   LastYearObs = 2011, #last Year of InSample Data 
-                                  AdjMatType = 3,
                                   sex="male", #Sex 
                                   ModelType = "RH", #APC or RH
                                   TFor = 3)
@@ -26,7 +24,7 @@ DataRH_BYM2_Stan_1114 <- StanData(Data=TotalData,
 options(mc.cores = parallel::detectCores())
 StanAPC_BYM2_M_1114 <- rstan::stan(file.path(getwd(),"StanCode/APC_BYM2.stan"),
                                    data=DataAPC_BYM2_Stan_1114,
-                                   chains = 4, iter=5000,warmup=2500, 
+                                   chains = 4, iter=5000, warmup=2500, 
                                    save_warmup=FALSE, thin=5,
                                    control = list(adapt_delta = 0.81))
 save(StanAPC_BYM2_M_1114, 
@@ -36,7 +34,7 @@ save(StanAPC_BYM2_M_1114,
 options(mc.cores = parallel::detectCores())
 StanRH_BYM2_M_1114 <- rstan::stan(file.path(getwd(),"StanCode/RH_BYM2.stan"),
                                   data=DataRH_BYM2_Stan_1114,
-                                  chains = 4, iter=5000,warmup=2500, 
+                                  chains = 4, iter=5000, warmup=2500, 
                                   save_warmup=FALSE, thin=5,
                                   control = list(adapt_delta = 0.81))
 
@@ -60,8 +58,8 @@ ModelListStacking <- list(APC_BYM2=FCMatStanAPC_BYM2_1114,
                           RH_BYM2=FCMatStanRH_BYM2_1114)
 
 #Get Out Of Sample Data (Test Data)
-DataOOS <- OutOfSampleData(Data = TotalData, Region="Bayern",
-                           sex="male", LastYearObs = 2011, h=3)
+DataOOS <- OutOfSampleData(Data = TotalData, 
+                           sex="male", LastYearObs = 2011, TFor=3)
 
 #Calculate Stacking Weights 
 SWeights1114 <- StackingWeights(ObservedCount = DataOOS$D,
@@ -84,7 +82,7 @@ OOSStackingMat <- list(FCMatStanAPC_BYM2_1114,
   StackingMat(SWeights1114, FCMatList=.)
 
 ###### --- Calculate Life Expectancy Quantiles for Stacking Matrix #############
-LifeExpFrameMaleStacking11114 <- 
+LifeExpFrameMaleStacking1114 <- 
   LifeExpSampleFunction2(FCMatIn = InSampleStackingMat, 
                          FCMatOut = OOSStackingMat, 
                          PI=c(80,50), sex="male", 
