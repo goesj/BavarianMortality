@@ -4,15 +4,19 @@ load("Data/TotalData.RData") #load Data
 source("01_Functions.R")
 
 ##########---- Posterior Predictive Checks -------------########################
+##Attention, no such file in Git (too big to upload). 
+#Run 04_RunModel first and save result
 load(file="../Results/StanAPC_BYM2_F.RData")
-## Extract Stan FC##
+
+
+## Extract replicated rates from Stan Object FC##
 StanFit_APC_BYM2 <- rstan::extract(StanAPC_BYM2_F, permuted=TRUE, 
-                                   pars=c("mufor","lambdahat","MHat"))
+                                   pars="lambdahat") #rates for PPC's
 
 #Create replicate Data  
-InSampleData <- TrainingDataFun(TotalData, sex="female", 
-                            LastYearObs=2016, 
-                            AdjMatType = 3) 
+InSampleData <- TrainingDataFun(TotalData, 
+                                sex="female", 
+                                LastYearObs=2014) 
 
 InSampObs <-nrow(InSampleData$Data)
 
