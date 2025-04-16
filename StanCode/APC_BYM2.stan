@@ -26,11 +26,9 @@ data{
 } transformed data {
   int N = T*A*R; //Total Number of Observations
   vector[N] log_E = log(E); // log of exposure
-  
-  int<lower=1> C;// Cohort Index
   int<lower = 1> L; // size of prediction vector
   
-  C = (M* (A-2)) + T; // max Cohort Index
+  int<lower=1> C = (M*(A-1)) + T;// Maximum Cohort Index Value
   L=TFor*A*R; // Length of prediction vector
   
 }
