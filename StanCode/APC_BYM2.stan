@@ -60,7 +60,7 @@ parameters{
   vector[N] eps_new; // new vector of overdisp effects for PPC
 } 
 transformed parameters {
-  vector[N] InterceptVek = rep_vector(Intercept,N); #Vector of Intercept
+  vector[N] InterceptVek = rep_vector(Intercept,N); //Vector of Intercept
   
   vector[R] convolved_re; // Total BYM2 Effect
   vector[R] phi_region; // Total regional effect
