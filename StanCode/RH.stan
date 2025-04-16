@@ -14,23 +14,16 @@ data{
   
   vector[N] log_E = log(E); // log of exposure
   
-  int<lower=1> C;// Maximum Cohort Index Value
-  int<lower = 1> Pred; // size of prediction vector
+  int<lower=1> C = (M*(A-1)) + T;// Maximum Cohort Index Value
+  int<lower = 1> Pred = TFor*A*R; // size of prediction vector
   int<lower=1> k[N]; // Kohort Index Vector
   int pos_k=1; // Helper for Cohort Index
-  // 
+  
   // Calculate Cohort Index for each Observation
   for(t in 1:T) for(r in 1:R) for (a in 1:A){
-    if(a==1){
-      k[pos_k] = M*((A-1)-a)+t;
-    } else { 
-      k[pos_k] = M*((A-1)-(a-1))+t;
-    }
+    k[pos_k] = M*(A-a)+t;
     pos_k += 1;
   }
-  
-  C = (M* (A-2)) + T; // max Cohort Index
-  Pred=TFor*A*R; //
 }
 parameters{
 
