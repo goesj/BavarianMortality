@@ -1,7 +1,7 @@
 ## Libraries needed for Functions###
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse,scoringRules,Qtools,MortCast,
-               future.apply,spdep,ggpubr,INLA,bayesplot)
+               future.apply,spdep,ggpubr,INLA,bayesplot,Matrix)
 
 ################ 1.1 Functions for Generation of Data ##########################
 
@@ -90,9 +90,8 @@ ScalingFacBYM2 <- function(Nodes, AdjMat){
 
 #Calculation of Cohort Index
 CohortIndex <- function(agegroup, time, maxAge, M){
-  #reshuffle age groups (the lowest two age groups are joined together)
-  agegroup <- ifelse(agegroup==1,agegroup,agegroup-1) 
-  return(k=M*(maxAge-agegroup)+time)
+  k <- M*(maxAge-agegroup)+time
+  return(k=k)
 }
 
 #Generation of Training Data
@@ -110,7 +109,7 @@ TrainingDataFun <- function(Data, sex, LastYearObs){
   Data$AgeID <- match(Data$AgeGroup, unique(Data$AgeGroup)) #only lowest age 
   Data$REID <- 1:nrow(Data) #Random effect ID
   Data$CohortID <- CohortIndex(agegroup = Data$AgeID, 
-                               time = Data$YearID, maxAge = max(Data$AgeID)-1,
+                               time = Data$YearID, maxAge = max(Data$AgeID),
                                M=5)
   
   
