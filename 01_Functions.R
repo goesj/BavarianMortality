@@ -1,7 +1,7 @@
 ## Libraries needed for Functions###
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse,scoringRules,Qtools,MortCast,
-               future.apply,spdep,ggpubr,INLA,bayesplot)
+               future.apply,spdep,ggpubr,INLA,bayesplot, Matrix)
 
 ################ 1.1 Functions for Generation of Data ##########################
 
